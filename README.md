@@ -178,11 +178,20 @@ pip install --upgrade $PACKAGE
 
 - Step 2. If deploy via CDK or CLI, need to convert the bash to based 64 text
 
+If we create life cycle configration in console, just paste the bash command directly to editor in SageMaker console.
+
 ```bash
 LCC_CONTENT=`openssl base64 -A -in install-package.sh`
 ```
 
-If we create life cycle configration in console, just paste the bash command directly to editor in SageMaker console.
+As we want to install libraries for the underlying SageMaker kernel, we will target this life cycle configuration to KernelGateway
+
+```bash
+aws sagemaker create-studio-lifecycle-config \
+--studio-lifecycle-config-name install-pip-package-on-kernel \
+--studio-lifecycle-config-content $LCC_CONTENT \
+--studio-lifecycle-config-app-type KernelGateway
+```
 
 - Step 3. Attach the life cycle configuration to either domain or user profile level
 
