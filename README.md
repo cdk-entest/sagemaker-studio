@@ -17,8 +17,8 @@ date: 2022-05-23
 
 - Create a Role for DS from SageMaker console
 - Tag the User Profile in SageMaker domain
-- Create a IAM user
-- Enable the IAM user to assume the role
+- Create a IAM user for DS
+- Enable the IAM user to assume the role, launch studio
 
 Tag the user profile in a domain using studiouserid for key and user profile name for value
 
@@ -29,7 +29,7 @@ Tag the user profile in a domain using studiouserid for key and user profile nam
 }
 ```
 
-Create a role which will be assumed by the DS IAM user
+Create a role which will be assumed by the DS IAM user. To enable the DS to launch studio which attached to a user profile, we need to setup IAM policy: 1) using tab studiouserid or 2) arn resource
 
 ```json
 {
@@ -59,6 +59,50 @@ Create a role which will be assumed by the DS IAM user
           "sagemaker:ResourceTag/studiouserid": "default-1684815788251"
         }
       }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sagemaker:ListApps",
+        "sagemaker:ListAppImageConfigs",
+        "sagemaker:ListDomains",
+        "sagemaker:ListUserProfiles",
+        "sagemaker:ListSpaces"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+It is possible to control access by resource arn
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sagemaker:CreateApp",
+        "sagemaker:CreateAppImageConfig",
+        "sagemaker:UpdateAppImageConfig",
+        "sagemaker:DeleteApp",
+        "sagemaker:DeleteAppImageConfig",
+        "sagemaker:DescribeApp",
+        "sagemaker:DescribeAppImageConfig",
+        "sagemaker:DescribeDomain",
+        "sagemaker:DescribeUserProfile"
+      ],
+      "Resource": ["*"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["sagemaker:CreatePresignedDomainUrl"],
+      "Resource": [
+        "arn:aws:sagemaker:ap-southeast-1:014600194779:domain/d-5uqevrcgia9q",
+        "arn:aws:sagemaker:ap-southeast-1:014600194779:user-profile/d-rmxdg2gitvsb/default-1684815788251"
+      ]
     },
     {
       "Effect": "Allow",
