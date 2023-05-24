@@ -13,6 +13,8 @@ date: 2022-05-23
 - Manage access control via IAM and studiouserid tag
 - Configure life cycle configuration for domain, and user
 
+
+
 ## SageMaker Studio
 
 There are basic concepts
@@ -22,7 +24,7 @@ There are basic concepts
 - share location
 - apps
 
-Figure
+![studio-components (1)](https://github.com/cdk-entest/sagemaker-studio/assets/20411077/79955a11-71f5-4591-9b40-05c7811faa26)
 
 ## Data Scientist
 
