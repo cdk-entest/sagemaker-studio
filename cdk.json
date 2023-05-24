@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts bin/sagemaker-ml-environment.ts",
+  "app": "npx ts-node --prefer-ts-exts bin/sg-ml-environment.ts",
   "watch": {
     "include": [
       "**"
