@@ -13,6 +13,17 @@ date: 2022-05-23
 - Manage access control via IAM and studiouserid tag
 - Configure life cycle configuration for domain, and user
 
+## SageMaker Studio
+
+There are basic concepts
+
+- domain
+- user profile
+- share location
+- apps
+
+Figure
+
 ## Data Scientist
 
 - [Turn on sourceIdentity
