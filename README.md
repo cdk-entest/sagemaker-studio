@@ -17,10 +17,8 @@ date: 2022-05-23
 
 - [Turn on sourceIdentity
   ](https://docs.aws.amazon.com/sagemaker/latest/dg/monitor-user-access.html)
-- Create a Role for DS from SageMaker console
 - Tag the User Profile in SageMaker domain
-- Create a IAM user for DS
-- Enable the IAM user to assume the role, launch studio
+- Create a Role, and IAM user for DS from SageMaker console
 
 Tag the user profile in a domain using studiouserid for key and user profile name for value
 
@@ -116,6 +114,30 @@ It is possible to control access by resource arn
         "sagemaker:ListSpaces"
       ],
       "Resource": "*"
+    }
+  ]
+}
+```
+
+Please take note the trust policy for the DS Role
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "sagemaker.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::014600194779:user/da"
+      },
+      "Action": "sts:AssumeRole"
     }
   ]
 }
