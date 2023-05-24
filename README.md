@@ -19,6 +19,8 @@ date: 2022-05-23
 - Tag the User Profile in SageMaker domain
 - Create a IAM user for DS
 - Enable the IAM user to assume the role, launch studio
+- [Turn on sourceIdentity
+  ](https://docs.aws.amazon.com/sagemaker/latest/dg/monitor-user-access.html)
 
 Tag the user profile in a domain using studiouserid for key and user profile name for value
 
@@ -29,7 +31,7 @@ Tag the user profile in a domain using studiouserid for key and user profile nam
 }
 ```
 
-Create a role which will be assumed by the DS IAM user. To enable the DS to launch studio which attached to a user profile, we need to setup IAM policy: 1) using tab studiouserid or 2) arn resource
+Create a role which will be assumed by the DS IAM user. To enable the DS to launch studio which attached to a user profile, we need to setup IAM policy: 1) using tab studiouserid or 2) arn resource. Let create an IAM policy for DS and use studiouserid
 
 ```json
 {
