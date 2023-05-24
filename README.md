@@ -155,6 +155,37 @@ Please take note the trust policy for the DS Role
 }
 ```
 
+## Life Cycle Configuration
+
+There are two common use cases
+
+- Install some libraries => target KernelGateway
+- Auto shutdown idle instances => target JupyterAppServer
+
+Step 1. Prepare the script, for example, a script to install pyarrow
+
+```bash
+#!/bin/bash
+set -eux
+
+# PARAMETERS
+PACKAGE=pyarrow
+
+pip install --upgrade $PACKAGE
+```
+
+Step 2. If deploy via CDK or CLI, need to convert the bash to based 64 text
+
+```bash
+LCC_CONTENT=`openssl base64 -A -in install-package.sh`
+```
+
+If we create life cycle configration in console, just paste the bash command directly to editor in SageMaker console.
+
+Step 3. Attach the life cycle configuration to either domain or user profile level
+
+Step 4. To make sure it work, either stop and start apps again
+
 ## Reference
 
 - [SageMaker Studio Architecture](https://docs.aws.amazon.com/sagemaker/latest/dg/notebooks.html)
@@ -168,3 +199,5 @@ Please take note the trust policy for the DS Role
 - [White Paper SageMaker studiouserid](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/identity-management.html)
 
 - [SageMaker studiouserid tag](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/permissions-management.html)
+
+- [SageMaker Life Cycle Configuration](https://aws.amazon.com/blogs/machine-learning/customize-amazon-sagemaker-studio-using-lifecycle-configurations/)
