@@ -1,14 +1,90 @@
-# Welcome to your CDK TypeScript project
+---
+title: sagemaker studio for ml environment
+description: sagemaker studio for ml environment
+author: haimtran
+publishedDate: 05/23/2023
+date: 2022-05-23
+---
 
-This is a blank project for CDK development with TypeScript.
+## Introduction
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+- Understand SageMakers studio infrastructure
+- Create domain, user profile, apps
+- Manage access control via IAM and studiouserid tag
+- Configure life cycle configuration for domain, and user
 
-## Useful commands
+## Data Scientist
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+- Create a Role for DS from SageMaker console
+- Tag the User Profile in SageMaker domain
+- Create a IAM user
+- Enable the IAM user to assume the role
+
+Tag the user profile in a domain using studiouserid for key and user profile name for value
+
+```json
+{
+  key: studiouserid,
+  value: "default-1684815788251"
+}
+```
+
+Create a role which will be assumed by the DS IAM user
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sagemaker:CreateApp",
+        "sagemaker:CreateAppImageConfig",
+        "sagemaker:UpdateAppImageConfig",
+        "sagemaker:DeleteApp",
+        "sagemaker:DeleteAppImageConfig",
+        "sagemaker:DescribeApp",
+        "sagemaker:DescribeAppImageConfig",
+        "sagemaker:DescribeDomain",
+        "sagemaker:DescribeUserProfile"
+      ],
+      "Resource": ["*"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["sagemaker:CreatePresignedDomainUrl"],
+      "Resource": ["*"],
+      "Condition": {
+        "StringEquals": {
+          "sagemaker:ResourceTag/studiouserid": "default-1684815788251"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "sagemaker:ListApps",
+        "sagemaker:ListAppImageConfigs",
+        "sagemaker:ListDomains",
+        "sagemaker:ListUserProfiles",
+        "sagemaker:ListSpaces"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+## Reference
+
+- [SageMaker Studio Architecture](https://docs.aws.amazon.com/sagemaker/latest/dg/notebooks.html)
+
+- [Sagemaker life cycle configuration](https://modelpredict.com/sagemaker-stop-your-instances-when-idle/)
+
+- [Sagemaker auto stop](https://github.com/aws-samples/amazon-sagemaker-notebook-instance-lifecycle-config-samples/blob/master/scripts/auto-stop-idle/on-start.sh)
+
+- [Sagemaker instance role](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html#sagemaker-roles-createnotebookinstance-perms)
+
+- [White Paper SageMaker studiouserid](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/identity-management.html)
+
+- [SageMaker studiouserid tag](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/permissions-management.html)
