@@ -24,8 +24,20 @@ Tag the user profile in a domain using studiouserid for key and user profile nam
 
 ```json
 {
-  key: studiouserid,
-  value: "default-1684815788251"
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AmazonSageMakerPresignedUrlPolicy",
+      "Effect": "Allow",
+      "Action": ["sagemaker:CreatePresignedDomainUrl"],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "sagemaker:ResourceTag/studiouserid": "${aws:username}"
+        }
+      }
+    }
+  ]
 }
 ```
 
