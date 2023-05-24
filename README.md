@@ -197,6 +197,8 @@ aws sagemaker create-studio-lifecycle-config \
 
 - Step 4. To make sure it work, either stop and start apps again
 
+Similarly, follow the same procedure to setup a shutdown script for SageMaker studio at domain or user profile level. Please note that we have to target JupyterAppServer in this case instead of KernelGateway. [auto-shutdown-script.sh](https://github.com/aws-samples/sagemaker-studio-lifecycle-config-examples/tree/main/scripts/install-autoshutdown-server-extension)
+
 ## Reference
 
 - [SageMaker Studio Architecture](https://docs.aws.amazon.com/sagemaker/latest/dg/notebooks.html)
