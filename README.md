@@ -15,12 +15,12 @@ date: 2022-05-23
 
 ## Data Scientist
 
+- [Turn on sourceIdentity
+  ](https://docs.aws.amazon.com/sagemaker/latest/dg/monitor-user-access.html)
 - Create a Role for DS from SageMaker console
 - Tag the User Profile in SageMaker domain
 - Create a IAM user for DS
 - Enable the IAM user to assume the role, launch studio
-- [Turn on sourceIdentity
-  ](https://docs.aws.amazon.com/sagemaker/latest/dg/monitor-user-access.html)
 
 Tag the user profile in a domain using studiouserid for key and user profile name for value
 
