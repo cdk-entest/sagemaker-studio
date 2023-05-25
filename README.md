@@ -13,8 +13,6 @@ date: 2022-05-23
 - Manage access control via IAM and studiouserid tag
 - Configure life cycle configuration for domain, and user
 
-
-
 ## SageMaker Studio
 
 There are basic concepts
@@ -227,3 +225,7 @@ Similarly, follow the same procedure to setup a shutdown script for SageMaker st
 - [SageMaker studiouserid tag](https://docs.aws.amazon.com/whitepapers/latest/sagemaker-studio-admin-best-practices/permissions-management.html)
 
 - [SageMaker Life Cycle Configuration](https://aws.amazon.com/blogs/machine-learning/customize-amazon-sagemaker-studio-using-lifecycle-configurations/)
+
+- [SageMaker Webinar](https://www.youtube.com/watch?v=1iSiN4sVMjE)
+
+- [LSP Life Cycle Configuration](https://github.com/seanpmorgan/studio-notebook-webinar)
