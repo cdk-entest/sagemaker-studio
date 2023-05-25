@@ -196,6 +196,18 @@ Then restart the jupyter server, wait for the terminal closed and refresh the br
 restart-jupyter-server
 ```
 
+Some useful command with conda in the Jupyter Server (note the Kernel). For example to list environment
+
+```bash
+conda env list
+```
+
+To list packages installed in an environment
+
+```bash
+conda list -n studio
+```
+
 ## Life Cycle Configuration
 
 There are two common use cases
