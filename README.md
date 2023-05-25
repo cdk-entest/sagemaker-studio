@@ -166,6 +166,36 @@ Please take note the trust policy for the DS Role
 }
 ```
 
+## Install Packages
+
+- Select correct environment
+- Install wanted packages
+- Pre-installed by life cycle configuration
+
+As recommended by the [docs](https://docs.aws.amazon.com/sagemaker/latest/dg/nbi-add-external.html), install from Notebook is the best because it ensure the correct environment selected
+
+```py
+%pip install pyarrow
+```
+
+It is possible to isntall from teriminal, but we need to activate the correct environment first
+
+```bash
+conda activate studio
+```
+
+Then install wanted packages, or entire script
+
+```bash
+pip install jupyterlab-code-formatter black
+```
+
+Then restart the jupyter server, wait for the terminal closed and refresh the browser notebook
+
+```bash
+restart-jupyter-server
+```
+
 ## Life Cycle Configuration
 
 There are two common use cases
