@@ -14,11 +14,6 @@ export class SgDomainStack extends Stack {
   constructor(scope: Construct, id: string, props: SgDomainProps) {
     super(scope, id, props);
 
-    const lifecycleKernelGatewayArn =
-      "arn:aws:sagemaker:ap-southeast-1:014600194779:studio-lifecycle-config/test";
-    const lifecycleJupyterServerArn =
-      "arn:aws:sagemaker:ap-southeast-1:014600194779:studio-lifecycle-config/auto-stop-app";
-
     // role for user
     const role = new aws_iam.Role(this, "RoleForUserProfileDemo", {
       roleName: "RoleForUserProfileDemo",
@@ -66,13 +61,18 @@ export class SgDomainStack extends Stack {
         securityGroupIds: [props.securityGroupId],
       },
 
+      // space setting
+      defaultSpaceSettings: {
+        executionRole: role.roleArn,
+      },
+
       defaultUserSettings: {
         executionRole: role.roleArn,
 
         jupyterServerAppSettings: {
           defaultResourceSpec: {
             // instanceType: "ml.t3.medium",
-            lifecycleConfigArn: lifecycleJupyterServerArn,
+            // lifecycleConfigArn: lifecycleJupyterServerArn,
             // sageMakerImageArn: "",
             // sageMakerImageVersionArn: "",
           },
@@ -89,7 +89,7 @@ export class SgDomainStack extends Stack {
 
           defaultResourceSpec: {
             instanceType: "ml.t3.medium",
-            lifecycleConfigArn: lifecycleKernelGatewayArn,
+            // lifecycleConfigArn: lifecycleKernelGatewayArn,
             // sageMakerImageArn: "",
             // sageMakerImageVersionArn: "",
           },
