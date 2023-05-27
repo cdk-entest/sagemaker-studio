@@ -252,6 +252,101 @@ aws sagemaker create-studio-lifecycle-config \
 
 Similarly, follow the same procedure to setup a shutdown script for SageMaker studio at domain or user profile level. Please note that we have to target JupyterAppServer in this case instead of KernelGateway. [auto-shutdown-script.sh](https://github.com/aws-samples/sagemaker-studio-lifecycle-config-examples/tree/main/scripts/install-autoshutdown-server-extension)
 
+## SageMaker Experiment
+
+Developing ML models is an interative process, we need to track input, output, metrics, log, etc. So SageMaker experiment's purpose is to 1) log, and 2) analyse those objects.
+
+- What SageMaker Experiment can do?
+
+Log a single parameter
+
+```py
+run.log_parameter("param1", "value1")
+```
+
+Log multiple parameters
+
+```py
+run.log_parameters({
+    "param2": "value2",
+    "param3": "value3"
+})
+```
+
+Log metric
+
+```py
+run.log_metric(name="test:loss", value=loss, step=epoch)
+```
+
+Log files to S3
+
+```py
+run.log_file("training_data.csv", name="training_data", is_output=False)
+```
+
+Log artifacts
+
+```py
+run.log_artifact(name="training_data", value="data.csv" is_output=False)
+```
+
+- How to use SageMaker Experiment SDK?
+
+Let look at a example below, Run is an object which profile the run method to log things mentioned above. We aslo can pass the run method in to a callback to log metrics such las loss_train, loss_test.
+
+```py
+with Run(experiment_name=experiment_name, sagemaker_session=sagemaker_session) as run:
+    run.log_parameter("batch_size", batch_size)
+    run.log_parameter("epochs", epochs)
+    run.log_parameter("dropout", dropout)
+
+    run.log_file("datasets/input_train.npy", is_output=False)
+    run.log_file("datasets/input_test.npy", is_output=False)
+    run.log_file("datasets/input_train_labels.npy", is_output=False)
+    run.log_file("datasets/input_test_labels.npy", is_output=False)
+
+    model.fit(
+        x_train,
+        y_train,
+        epochs=epochs,
+        batch_size=batch_size,
+        validation_split=0.1,
+        callbacks=[ExperimentCallback(run, model, x_test, y_test)]
+    )
+
+    score = model.evaluate(x_test, y_test, verbose=0)
+    print("test loss: ", score[0])
+    print("test accuracy: ", score[1])
+
+    run.log_metric(name="Final test loss: ", value=score[0])
+    run.log_metric(name="Final test accuracy: ", value=score[1])
+
+```
+
+The callback
+
+```py
+class ExperimentCallback(keras.callbacks.Callback):
+    """ """
+
+    def __init__(self, run, model, x_test, y_test):
+        """Save params in constructor"""
+        self.run = run
+        self.model = model
+        self.x_test = x_test
+        self.y_test = y_test
+
+    def on_epoch_end(self, epoch, logs=None):
+        """ """
+        keys = list(logs.keys())
+        for key in keys:
+            self.run.log_metric(name=key, value=logs[key], step=epoch)
+            print("{} -> {}".format(key, logs[key]))
+```
+
+## SageMaker Hyper Parameters
+
 ## Reference
 
 - [SageMaker Studio Architecture](https://docs.aws.amazon.com/sagemaker/latest/dg/notebooks.html)
