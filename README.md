@@ -345,6 +345,11 @@ class ExperimentCallback(keras.callbacks.Callback):
             print("{} -> {}".format(key, logs[key]))
 ```
 
+There are some examples:
+
+- [SageMaker Experiment with Tensorflow](https://github.com/cdk-entest/sagemaker-studio/blob/master/notebook/sg-experiment-tensorflow.ipynb)
+- [SageMaker Experiment with PyTorch](https://github.com/cdk-entest/sagemaker-studio/blob/master/notebook/sg-experiment-pytouch.ipynb)
+
 ## SageMaker Hyper Parameters
 
 ## Reference
