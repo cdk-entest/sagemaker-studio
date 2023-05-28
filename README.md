@@ -388,12 +388,70 @@ customer_df.head(10)
 - PySparkProcessor
 - PySpark code
 
-To use Glue interactive session right in SageMaker studio notebook
+Section 1) To use Glue interactive session right in SageMaker studio notebook
 
 - Update role for notebook
 - Choose Spark Analytics kernel with Glue PySpark and Ray [HERE](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-notebooks-glue.html)
 
-Pass arguments from run command to the job script by using argparse. First defin parser in the main function, for example, main.py
+First, we need to attach AwsGlueSessionUserRestrictedServiceRole to the role, then update policy with iam PassRole and GetRole as
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "unique_statement_id",
+
+      "Effect": "Allow",
+      "Action": ["iam:GetRole", "iam:PassRole", "sts:GetCallerIdentity"],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+Second, need to update the trust policy
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": ["glue.amazonaws.com", "sagemaker.amazonaws.com"]
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
+Third, launch a notebook and select Spark Analytics and PySpark (Ray) kernel, configure the Glue session by magic
+
+```py
+# %additional_python_modules matplotlib, numpy, pandas
+# %idle_timeout 60
+# %glue_version 3.0
+# %number_of_workers 5
+# %iam_role arn:aws:iam::413175686616:role/RoleForDataScientistUserProfile
+```
+
+Fourth, create Glue and Spark context
+
+```py
+from awsglue.context import GlueContext
+from pyspark.context import SparkContext
+from pyspark.sql import SparkSession
+
+sc = SparkContext.getOrCreate()
+glueContext = GlueContext(sc)
+
+# spark = glueContext.spark_session
+spark = SparkSession.builder.appName("PySparkApp").getOrCreate()
+```
+
+Section 2) Pass arguments from run command to the job script by using argparse. First defin parser in the main function, for example, main.py
 
 ```py
 parser = argparse.ArgumentParser(description="app inputs and outputs")
@@ -410,7 +468,7 @@ Then pass arguments from running command, similar with container
 python main.py --s3_input_bucket bucket-name
 ```
 
-create a PySparkProcessor processing job
+Section 3) Create a PySparkProcessor processing job
 
 ```py
 spark_processor = PySparkProcessor(
@@ -443,7 +501,7 @@ spark_processor.run(
 )
 ```
 
-Create a SparkSession
+Section 4) Create a SparkSession
 
 ```py
 import pyspark
