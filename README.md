@@ -252,6 +252,129 @@ aws sagemaker create-studio-lifecycle-config \
 
 Similarly, follow the same procedure to setup a shutdown script for SageMaker studio at domain or user profile level. Please note that we have to target JupyterAppServer in this case instead of KernelGateway. [auto-shutdown-script.sh](https://github.com/aws-samples/sagemaker-studio-lifecycle-config-examples/tree/main/scripts/install-autoshutdown-server-extension)
 
+## SageMaker Feature Store
+
+Undersand basic concepts
+
+- Feature group
+- Ingest dataframe into a feature group
+- Feature group and Glue table
+- Query with Athena
+
+Two very important docs for developers
+
+- [boto3 sagemaker feature store](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker-featurestore-runtime.html)
+
+- [Feature Store APIs](https://sagemaker.readthedocs.io/en/stable/api/prep_data/feature_store.html#feature-store)
+
+Step 1) Let create a feature groups
+
+```py
+from sagemaker.feature_store.feature_group import FeatureGroup
+
+customers_feature_group = FeatureGroup(
+    name=customers_feature_group_name,
+    sagemaker_session=sagemaker_session
+)
+orders_feature_group = FeatureGroup(
+    name=orders_feature_group_name,
+    sagemaker_session=sagemaker_session
+)
+
+```
+
+Create definition for feature groups
+
+```py
+customers_feature_group.load_feature_definitions(data_frame=customer_data)
+orders_feature_group.load_feature_definitions(data_frame=orders_data)
+```
+
+Ingest dataframe into feature groups
+
+```py
+customers_feature_group.create(
+    s3_uri=f"s3://{s3_bucket_name}/{prefix}",
+    record_identifier_name=record_identifier_feature_name,
+    event_time_feature_name="EventTime",
+    role_arn=role,
+    enable_online_store=True,
+)
+
+orders_feature_group.create(
+    s3_uri=f"s3://{s3_bucket_name}/{prefix}",
+    record_identifier_name=record_identifier_feature_name,
+    event_time_feature_name="EventTime",
+    role_arn=role,
+    enable_online_store=True,
+)
+```
+
+Step 2) Add metadata to a feature
+
+```py
+from sagemaker.feature_store.inputs import FeatureParameter
+
+customers_feature_group.update_feature_metadata(
+    feature_name="customer_id",
+    description="The ID of a customer. It is also used in orders_feature_group.",
+    parameter_additions=[FeatureParameter("idType", "primaryKey")],
+)
+
+customers_feature_group.describe_feature_metadata(feature_name="customer_id")
+
+```
+
+Step 3) Feature Store API - List Feature Group
+
+```py
+from sagemaker.feature_store.feature_store import FeatureStore
+from sagemaker.feature_store.inputs import Identifier
+
+feature_store = FeatureStore(
+    sagemaker_session=sagemaker_session
+)
+
+feature_store.list_feature_groups()
+```
+
+Step 4) Feature Store API - Read a batch records
+
+```py
+feature_store.batch_get_record(
+    identifiers=[
+        Identifier(
+            feature_group_name="customers-feature-group-28-03-41-44",
+            record_identifiers_value_as_string= ["573291", "109382", "828400", "124013"]
+        )
+    ]
+)
+
+```
+
+Step 5) Feature Store API - Athena Query
+
+```py
+from sagemaker.feature_store.feature_group import AthenaQuery
+
+customer_query = AthenaQuery(
+    sagemaker_session=sagemaker_session,
+    catalog="AwsDataCatalog",
+    database="sagemaker_featurestore",
+    table_name="customers_feature_group_28_03_41_44_1685245305"
+)
+
+customer_query.run(
+    'select * from customers_feature_group_28_03_41_44_1685245305',
+    output_location=f"s3://{s3_bucket_name}/notebook-athena-result/"
+)
+
+customer_df = customer_query.as_dataframe()
+
+customer_df.head(10)
+
+```
+
 ## SageMaker Experiment
 
 Developing ML models is an interative process, we need to track input, output, metrics, log, etc. So SageMaker experiment's purpose is to 1) log, and 2) analyse those objects.
