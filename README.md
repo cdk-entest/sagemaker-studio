@@ -375,6 +375,114 @@ customer_df.head(10)
 
 ```
 
+## SageMaker Local PySpark
+
+- DataScience kernel and install PySpark
+- Reand and write data from S3
+- Simple feature processing
+
+## SageMaker Spark Processor
+
+- Develop with Glue notebook
+- Parse arguments
+- PySparkProcessor
+- PySpark code
+
+To use Glue interactive session right in SageMaker studio notebook
+
+- Update role for notebook
+- Choose Spark Analytics kernel with Glue PySpark and Ray [HERE](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-notebooks-glue.html)
+
+Pass arguments from run command to the job script by using argparse. First defin parser in the main function, for example, main.py
+
+```py
+parser = argparse.ArgumentParser(description="app inputs and outputs")
+parser.add_argument("--s3_input_bucket", type=str, help="s3 input bucket")
+parser.add_argument("--s3_input_key_prefix", type=str, help="s3 input key prefix")
+parser.add_argument("--s3_output_bucket", type=str, help="s3 output bucket")
+parser.add_argument("--s3_output_key_prefix", type=str, help="s3 output key prefix")
+args = parser.parse_args()
+```
+
+Then pass arguments from running command, similar with container
+
+```bash
+python main.py --s3_input_bucket bucket-name
+```
+
+create a PySparkProcessor processing job
+
+```py
+spark_processor = PySparkProcessor(
+    base_job_name="sm-spark",
+    framework_version="3.1",
+    role=role,
+    instance_count=2,
+    instance_type="ml.m5.xlarge",
+    max_runtime_in_seconds=1200,
+)
+```
+
+then run the job
+
+```py
+spark_processor.run(
+    submit_app=f"{local_code_path}",
+    arguments=[
+        "--s3_input_bucket",
+        bucket,
+        "--s3_input_key_prefix",
+        input_prefix_abalone,
+        "--s3_output_bucket",
+        bucket,
+        "--s3_output_key_prefix",
+        input_preprocessed_prefix_abalone,
+    ],
+    spark_event_logs_s3_uri="s3://{}/{}/spark_event_logs".format(bucket, prefix),
+    logs=False,
+)
+```
+
+Create a SparkSession
+
+```py
+import pyspark
+from pyspark.sql import SparkSession
+
+
+spark = (
+    SparkSession.builder.appName("PySparkApp")
+    .config(
+        "spark.jars.packages",
+        "org.apache.hadoop:hadoop-aws:3.2.2")
+    .config(
+        "fs.s3a.aws.credentials.provider",
+        "com.amazonaws.auth.ContainerCredentialsProvider")
+    .config("fs.s3a.endpoint", "s3.amazonaws.com")
+    .getOrCreate()
+)
+```
+
+Read data from S3 using PySpark
+
+```py
+data_uri = f"s3a://amazon-reviews-pds/parquet/product_category=Automotive/part-00000-495c48e6-96d6-4650-aa65-3c36a3516ddd.c000.snappy.parquet"
+df_parquet = spark.read.format("parquet").load(data_uri)
+df_parquet.show(20)
+```
+
+Write data to S3 using PySpark
+
+```py
+bucket = "sagemaker-us-east-1-413175686616"
+
+df_parquet.write.format("csv")\
+.option("header", True)\
+.option("delimiter", "\t")\
+.option("quote", '"')\
+.save(f"s3a://{bucket}/data-spark/amazon-reviews-2.csv")
+```
+
 ## SageMaker Experiment
 
 Developing ML models is an interative process, we need to track input, output, metrics, log, etc. So SageMaker experiment's purpose is to 1) log, and 2) analyse those objects.
@@ -494,3 +602,5 @@ There are some examples:
 - [SageMaker Webinar](https://www.youtube.com/watch?v=1iSiN4sVMjE)
 
 - [LSP Life Cycle Configuration](https://github.com/seanpmorgan/studio-notebook-webinar)
+
+- [SageMaker Studio Notebook and Glue Session](https://docs.aws.amazon.com/sagemaker/latest/dg/studio-notebooks-glue.html)
