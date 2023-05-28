@@ -386,7 +386,7 @@ customer_df.head(10)
 - Develop with Glue notebook
 - Parse arguments
 - PySparkProcessor
-- PySpark code
+- [sg-glue-spark](https://github.com/cdk-entest/sagemaker-studio/blob/master/notebook/sg-glue-spark.ipynb) and [sg-spark-processing](https://github.com/cdk-entest/sagemaker-studio/blob/master/notebook/sg-spark-processing.ipynb)
 
 Section 1) To use Glue interactive session right in SageMaker studio notebook
 
