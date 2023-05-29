@@ -451,6 +451,69 @@ glueContext = GlueContext(sc)
 spark = SparkSession.builder.appName("PySparkApp").getOrCreate()
 ```
 
+Read parquet from S3
+
+```py
+df_parquet = spark.read.format("parquet").load(f"s3://{source_bucket_name}/parquet/")
+```
+
+Read csv from S3 with schema. First define a schema
+
+```py
+from pyspark.sql.types import IntegerType, StringType, StructType
+
+schema = (
+    StructType()
+    .add("marketplace", StringType(), True)
+    .add("customer_id", StringType(), True)
+    .add("review_id", StringType(), True)
+    .add("product_id", StringType(), True)
+    .add("product_parent", IntegerType(), True)
+    .add("product_title", StringType(), True)
+    .add("product_category", StringType(), True)
+    .add("star_rating", IntegerType(), True)
+    .add("helpful_vote", IntegerType(), True)
+    .add("total_vote", IntegerType(), True)
+    .add("vine", StringType(), True)
+    .add("verified_purchase", StringType(), True)
+    .add("review_headline", StringType(), True)
+    .add("review_body", StringType(), True)
+    .add("myyear", StringType(), True)
+)
+```
+
+Then load csv from S3 into a Spark dataframe
+
+```py
+df_csv = (
+    spark.read.format("csv")
+    .option("header", True)
+    .schema(schema)
+    .option("delimiter", "\t")
+    .option("quote", '"')
+    .load(f"s3://{source_bucket_name}/tsv/")
+    # .select("marketplace", "customer_id", "review_id", "product_id", "product_title")
+)
+```
+
+A very simple transform which select some columns of interest
+
+```py
+df_clean = df_csv.select("marketplace", "customer_id", "product_id", "star_rating")
+```
+
+Finally, write the dataframe to S3
+
+```py
+df_clean.write.format("parquet").save(f"s3://{dest_bucket_name}/amazon-reviews/")
+```
+
+Double check the result in S3
+
+```py
+!aws s3 ls --summarize --human-readable --recursive s3://sagemaker-us-east-1-413175686616/amazon-reviews/
+```
+
 Section 2) Pass arguments from run command to the job script by using argparse. First defin parser in the main function, for example, main.py
 
 ```py
