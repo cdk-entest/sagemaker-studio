@@ -518,29 +518,31 @@ Section 2) Pass arguments from run command to the job script by using argparse. 
 
 ```py
 parser = argparse.ArgumentParser(description="app inputs and outputs")
-parser.add_argument("--s3_input_bucket", type=str, help="s3 input bucket")
-parser.add_argument("--s3_input_key_prefix", type=str, help="s3 input key prefix")
-parser.add_argument("--s3_output_bucket", type=str, help="s3 output bucket")
-parser.add_argument("--s3_output_key_prefix", type=str, help="s3 output key prefix")
+parser = argparse.ArgumentParser(description="app inputs and outputs")
+parser.add_argument("--source_bucket_name", type=str, help="s3 input bucket")
+parser.add_argument("--dest_bucket_name", type=str, help="output s3 prefix")
 args = parser.parse_args()
 ```
 
 Then pass arguments from running command, similar with container
 
 ```bash
-python main.py --s3_input_bucket bucket-name
+python main.py --source_bucket_name sagemaker-us-east-1
 ```
+
+The processing code in PySpark [HERE]()
 
 Section 3) Create a PySparkProcessor processing job
 
 ```py
 spark_processor = PySparkProcessor(
-    base_job_name="sm-spark",
+    base_job_name="process-amazon-reviews",
     framework_version="3.1",
     role=role,
     instance_count=2,
     instance_type="ml.m5.xlarge",
     max_runtime_in_seconds=1200,
+    tags=[{"Key": "tag-key", "Value": "tag-value"}],
 )
 ```
 
@@ -548,60 +550,15 @@ then run the job
 
 ```py
 spark_processor.run(
-    submit_app=f"{local_code_path}",
+    submit_app="./spark-code/preprocess.py",
     arguments=[
-        "--s3_input_bucket",
-        bucket,
-        "--s3_input_key_prefix",
-        input_prefix_abalone,
-        "--s3_output_bucket",
-        bucket,
-        "--s3_output_key_prefix",
-        input_preprocessed_prefix_abalone,
+        "--source_bucket_name",
+        source_bucket_name,
+        "--dest_bucket_name",
+        dest_bucket_name,
     ],
-    spark_event_logs_s3_uri="s3://{}/{}/spark_event_logs".format(bucket, prefix),
     logs=False,
 )
-```
-
-Section 4) Create a SparkSession
-
-```py
-import pyspark
-from pyspark.sql import SparkSession
-
-
-spark = (
-    SparkSession.builder.appName("PySparkApp")
-    .config(
-        "spark.jars.packages",
-        "org.apache.hadoop:hadoop-aws:3.2.2")
-    .config(
-        "fs.s3a.aws.credentials.provider",
-        "com.amazonaws.auth.ContainerCredentialsProvider")
-    .config("fs.s3a.endpoint", "s3.amazonaws.com")
-    .getOrCreate()
-)
-```
-
-Read data from S3 using PySpark
-
-```py
-data_uri = f"s3a://amazon-reviews-pds/parquet/product_category=Automotive/part-00000-495c48e6-96d6-4650-aa65-3c36a3516ddd.c000.snappy.parquet"
-df_parquet = spark.read.format("parquet").load(data_uri)
-df_parquet.show(20)
-```
-
-Write data to S3 using PySpark
-
-```py
-bucket = "sagemaker-us-east-1-413175686616"
-
-df_parquet.write.format("csv")\
-.option("header", True)\
-.option("delimiter", "\t")\
-.option("quote", '"')\
-.save(f"s3a://{bucket}/data-spark/amazon-reviews-2.csv")
 ```
 
 ## SageMaker Experiment
