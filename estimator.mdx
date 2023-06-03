@@ -1,0 +1,89 @@
+---
+title: sagemaker estimator
+description: sagemaker estimator
+author: haimtran
+publishedDate: 01/06/2023
+date: 2022-06-01
+---
+
+## Introduction
+
+[GitHub]() this note shows basics concepts of SageMaker Estimator API
+
+- Estimator: Built-In Algorithm, Framework, BYO
+- Train a Built-In Algorithm
+- Fine Tune a Pre-trained Algorithm (GPT-J 6B)
+- Train a Framework Algorithm
+- Hyper Parameter Tunning
+- Deploy an Endpoing
+
+## Estimator API
+
+Normally, we develop a model using a framework such as neural net (NN) using a framework such as Tensorflow, PyTorch or Scikit-learn. In SageMaker, there are three main group of SageMaker Estimator.
+
+- Built-In Algorithm => call fit to train
+- Framework Algorithm => call fit(entry_point=your_script) to train
+- Bring Your Own Model (BYO) => provide your own container image
+
+## Estimator Class
+
+An estimator is used to train a ML algorithm, and it consits of at least the following component. For a buit-in algorithm or Amazon custom algorithm, we can ignore the the container iamge uri parameter.
+
+- Container image (container image uri)
+- Instance type which run the container
+- IAM Role for accessing S3 (data, code), CloudWatch logs
+
+Let create a estimator for PCA (built-in algorithm) using the based estimator class. First we need to find the iamge uri
+
+```py
+# get sklearn image uri
+image_uri = sagemaker.estimator.image_uris.retrieve(
+    framework="pca",
+    region=os.environ["REGION"],
+    version="0.23-1",
+    instance_type="ml.m4.xlarge",
+)
+```
+
+Then we can create a estimator using the SageMaker based Estimator class
+
+```py
+# create an estimator
+estimator = sagemaker.estimator.Estimator(
+    image_uri=image_uri,
+    instance_type="ml.m4.xlarge",
+    instance_count=1,
+    # output_path="",
+    role=os.environ["SAGEMAKER_ROLE"],
+)
+```
+
+Then we can train the model by calling fit method on the estimator
+
+```py
+# set hyperparameter
+estimator.set_hyperparameters(
+    feature_dim=4, num_components=3, mini_batch_size=200
+)
+```
+
+Train the model by creating a training job either by estimator.fit() or other methods to create a training job such as Boto3, TrainingStep in a pipeline.
+
+```py
+# TODO: update
+estimator.fit()
+```
+
+Finally, we can deploy the model as a endpoint and invoke it
+
+```py
+
+```
+
+## Buit-In Algorithm
+
+## Framework Algorithm
+
+## BYO Model
+
+## Reference
