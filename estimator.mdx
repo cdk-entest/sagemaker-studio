@@ -80,7 +80,7 @@ Finally, we can deploy the model as a endpoint and invoke it
 
 ```
 
-## Estimator Input
+## Estimator Data Access
 
 There are some options to feed training data into a estimator.fit() for training [docs](https://sagemaker.readthedocs.io/en/stable/api/training/estimators.html#sagemaker.estimator.EstimatorBase)
 
@@ -164,7 +164,20 @@ pca.set_hyperparameters(
 pca.fit(inputs={"train": s3_train_data})
 ```
 
-- Option 3.
+- Option 3. [Local Mode](https://aws.amazon.com/blogs/machine-learning/use-the-amazon-sagemaker-local-mode-to-train-on-your-notebook-instance/)
+
+```py
+inputs = sagemaker_session.upload_data(path='data', bucket=bucket, key_prefix='data/cifar10')
+
+cifar10_estimator = PyTorch(py_version='py3',
+                            entry_point='source/cifar10.py',
+                            role=role,
+                            framework_version='1.7.1',
+                            instance_count=1,
+                            instance_type='local')
+
+cifar10_estimator.fit(inputs)
+```
 
 ## Buit-In Algorithm
 
