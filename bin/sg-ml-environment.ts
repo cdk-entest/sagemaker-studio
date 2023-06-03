@@ -5,7 +5,7 @@ import { SgNotebookStack } from "../lib/sg-notebook-stack";
 import { SgDomainStack } from "../lib/sg-domain-stack";
 import { SgUserStack } from "../lib/sg-user-stack";
 import { DataScientistStack } from "../lib/sg-data-scientist";
-import { env } from "process";
+import { RoleForDataScientistStack } from "../lib/sg-role-ds-iam-user";
 
 const app = new cdk.App();
 
@@ -28,6 +28,14 @@ const domain = new SgDomainStack(app, "SageMakerDomainStack", {
 const userProfile = new SgUserStack(app, "SageMakerUserProfile", {
   domainId: domain.domainId,
   username: "DataScientist",
+});
+
+new RoleForDataScientistStack(app, "RoleForDataScientistStack", {
+  userName: "AllDataScientist",
+  env: {
+    region: process.env.CDK_DEFAULT_REGION,
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+  },
 });
 
 const tcbDataScientist = new DataScientistStack(app, "DataScientistTCBStack", {

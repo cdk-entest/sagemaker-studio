@@ -30,20 +30,6 @@ export class DataScientistStack extends Stack {
       passwordResetRequired: false,
     });
 
-    const role = new aws_iam.Role(
-      this,
-      `RoleForDataScientistIAMUser_${props.userName}`,
-      {
-        roleName: `RoleForDataScientistIAMUser_${props.userName}`,
-        assumedBy: new aws_iam.CompositePrincipal(
-          new aws_iam.ServicePrincipal("sagemaker.amazonaws.com"),
-          new aws_iam.ServicePrincipal(
-            `arn:aws:iam::${this.account}:user/${props.userName}`
-          )
-        ),
-      }
-    );
-
     // allow athena query
     user.addManagedPolicy(
       aws_iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonAthenaFullAccess")
@@ -69,8 +55,8 @@ export class DataScientistStack extends Stack {
             effect: Effect.ALLOW,
             actions: ["sagemaker:CreatePresignedDomainUrl"],
             resources: [
-              `arn:aws:sagemaker:ap-southeast-1:${this.account}:domain/*`,
-              `arn:aws:sagemaker:ap-southeast-1:${this.account}:user-profile/*/*`,
+              `arn:aws:sagemaker:${this.region}:${this.account}:domain/*`,
+              `arn:aws:sagemaker:${this.region}:${this.account}:user-profile/*/*`,
             ],
           }),
           new aws_iam.PolicyStatement({
@@ -293,12 +279,5 @@ export class DataScientistStack extends Stack {
     smExperimentManagementPolicy.attachToUser(user);
     smVisualExpManPolicy.attachToUser(user);
     smJobPolicy.attachToUser(user);
-
-    // attach policies to iam role
-    smStudioManPolicy.attachToRole(role);
-    smModelManPolicy.attachToRole(role);
-    smExperimentManagementPolicy.attachToRole(role);
-    smVisualExpManPolicy.attachToRole(role);
-    smJobPolicy.attachToRole(role);
   }
 }
