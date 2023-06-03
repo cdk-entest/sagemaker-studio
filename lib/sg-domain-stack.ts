@@ -15,8 +15,8 @@ export class SgDomainStack extends Stack {
     super(scope, id, props);
 
     // role for user
-    const role = new aws_iam.Role(this, "RoleForUserProfileDemo", {
-      roleName: "RoleForUserProfileDemo",
+    const role = new aws_iam.Role(this, "RoleForSageMakerDomainDemo", {
+      roleName: "RoleForSageMakerDomainDemo",
       assumedBy: new aws_iam.CompositePrincipal(
         new aws_iam.ServicePrincipal("sagemaker.amazonaws.com"),
         new aws_iam.ServicePrincipal("states.amazonaws.com")
