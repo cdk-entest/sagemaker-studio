@@ -29,8 +29,12 @@ const userProfile = new SgUserStack(app, "SageMakerUserProfile", {
   username: "DataScientist",
 });
 
-const ds = new DataScientistStack(app, "DataScientistStack", {
+const tcbDataScientist = new DataScientistStack(app, "DataScientistTCBStack", {
   userName: "tcb",
+});
+
+const hauDataScientist = new DataScientistStack(app, "DataScientistHauStack", {
+  userName: "hau",
 });
 
 notebook.addDependency(vpc);
