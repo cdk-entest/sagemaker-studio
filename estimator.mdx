@@ -169,12 +169,13 @@ pca.fit(inputs={"train": s3_train_data})
 ```py
 inputs = sagemaker_session.upload_data(path='data', bucket=bucket, key_prefix='data/cifar10')
 
-cifar10_estimator = PyTorch(py_version='py3',
-                            entry_point='source/cifar10.py',
-                            role=role,
-                            framework_version='1.7.1',
-                            instance_count=1,
-                            instance_type='local')
+cifar10_estimator = PyTorch(
+    py_version='py3',
+    entry_point='source/cifar10.py',
+    role=role,
+    framework_version='1.7.1',
+    instance_count=1,
+    instance_type='local')
 
 cifar10_estimator.fit(inputs)
 ```
