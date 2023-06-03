@@ -13,12 +13,29 @@ export class SgUserStack extends Stack {
 
     const role = new aws_iam.Role(this, "RoleForDataScientistUserProfile", {
       roleName: "RoleForDataScientistUserProfile",
-      assumedBy: new aws_iam.ServicePrincipal("sagemaker.amazonaws.com"),
+      assumedBy: new aws_iam.CompositePrincipal(
+        new aws_iam.ServicePrincipal("states.amazonaws.com"),
+        new aws_iam.ServicePrincipal("sagemaker.amazonaws.com")
+      ),
     });
 
     role.addManagedPolicy(
       aws_iam.ManagedPolicy.fromAwsManagedPolicyName(
         "AmazonSageMakerFullAccess"
+      )
+    );
+
+    // logs
+    role.addManagedPolicy(
+      aws_iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "CloudWatchEventsFullAccess"
+      )
+    );
+
+    // create pipeline using stepfunction
+    role.addManagedPolicy(
+      aws_iam.ManagedPolicy.fromAwsManagedPolicyName(
+        "AWSStepFunctionsFullAccess"
       )
     );
 

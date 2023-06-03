@@ -4,6 +4,7 @@ import { VpcStack } from "../lib/network-stack";
 import { SgNotebookStack } from "../lib/sg-notebook-stack";
 import { SgDomainStack } from "../lib/sg-domain-stack";
 import { SgUserStack } from "../lib/sg-user-stack";
+import { DataScientistStack } from "../lib/sg-data-scientist";
 
 const app = new cdk.App();
 
@@ -26,6 +27,10 @@ const domain = new SgDomainStack(app, "SageMakerDomainStack", {
 const userProfile = new SgUserStack(app, "SageMakerUserProfile", {
   domainId: domain.domainId,
   username: "DataScientist",
+});
+
+const ds = new DataScientistStack(app, "DataScientistStack", {
+  userName: "tcb",
 });
 
 notebook.addDependency(vpc);
