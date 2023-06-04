@@ -1,0 +1,35 @@
+---
+title: sagemaker model and model registry
+description: sagemaker model and model registry
+author: haimtran
+publishedDate: 01/06/2023
+date: 2022-06-01
+---
+
+## Introduction
+
+- Hands-on with Data Wrangler
+- Hands-on with SageMaker Clarify
+
+## Wrangler Flow
+
+Let create a simple data flow with wrangler to
+
+- check data quality
+- drop some columns
+- fill missing values
+- add processing job
+
+Upload the raw ecg data to s3
+
+```
+aws s3 cp 171A_raw.csv s3://bucket-name/ecg/
+```
+
+Import data to wrangler, and add analysis steps. Below is the entire flow
+
+## Reference
+
+- [SageMaker Immersion Day](https://catalog.us-east-1.prod.workshops.aws/workshops/63069e26-921c-4ce1-9cc7-dd882ff62575/en-US/lab1/option1)
+
+- [SageMaker Data Wrangler](https://catalog.us-east-1.prod.workshops.aws/workshops/327375b8-425b-49d4-b0da-241da0595ecf/en-US/time-series-lab/03-remove-redundant-columns)
