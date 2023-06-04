@@ -17,6 +17,11 @@ date: 2022-06-01
 
 ## Data Drift
 
+<LinkedImage
+  alt="sagemaker model monitor 1"
+  src="/thumbnail/sm_model_monitor_1.png"
+/>
+
 - Step 1) Enable data capture for the deployed endpoint
 - Step 2) Generate baseline
 - Step 3) Schedule and run the monitoring job
@@ -89,6 +94,11 @@ my_default_monitor.create_monitoring_schedule(
 The job runs every hour using SageMaker Processing. The monitoring job compares the captured inference requests to the baseline. For each execution of the monitoring job, genenrated results include a violation report and a statistic erport saved in S3 and metrics emitted to CloudWatch.
 
 ## Bias Drift
+
+<LinkedImage
+  alt="sagemaker model monitor 2"
+  src="/thumbnail/sm_model_monitor_1.png"
+/>
 
 - Step 1) Enable data captured for the endpoint
 - Step 2) Generate baseline
@@ -179,3 +189,9 @@ Step 4) Anazlye and act on results
 - [Monitoring data quality](https://aws.amazon.com/blogs/awsmarketplace/monitoring-data-quality-in-third-party-models-with-amazon-sagemaker-model-monitor/)
 
 - [How Model Monitor Work](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html#model-monitor-how-it-works)
+
+- [Mode Monitor with Clarify Notebook](https://sagemaker-examples.readthedocs.io/en/latest/sagemaker_model_monitor/fairness_and_explainability/SageMaker-Model-Monitor-Fairness-and-Explainability.html)
+
+- [Model Monitor Started Notebook](https://sagemaker-examples.readthedocs.io/en/latest/sagemaker_model_monitor/introduction/SageMaker-ModelMonitoring.html)
+
+- [Data Quantity Monitor Notebook](https://github.com/aws/amazon-sagemaker-examples/blob/main/aws_marketplace/using_model_packages/data_quality_monitoring/monitoring_data_quality_of_models.ipynb)

@@ -8,13 +8,20 @@ date: 2022-06-01
 
 ## Introduction
 
+[GitHub](https://github.com/cdk-entest/sagemaker-studio) shows basic of SageMaker endpoint
+
 - Hosting Option: Single Model, Multiple Models
 - Product Variants
 - Auto Scaling Models
 - Update Models: A/B, Blue/Green, Canary
 - Model Monitoring
 
-## Multi-Model Endpoint
+## Multi-Model endpoint
+
+<LinkedImage
+  alt="sagemaker multi model endpoint"
+  src="/thumbnail/sm_multi_model_endpoint.png"
+/>
 
 It is possible to host multiple models within container behind a endpoint to save cost. Follow [docs](https://docs.aws.amazon.com/sagemaker/latest/dg/create-multi-model-endpoint.html) to setup a MM endpoint. Then we can specify TargetModel when invoking a endpoint.
 
@@ -78,6 +85,11 @@ response = runtime_sagemaker_client.invoke_endpoint(
 ```
 
 ## A/B Testing Endpoint
+
+<LinkedImage
+  alt="sagemaker ab testing endpoint"
+  src="/thumbnail/sm_ab_testing_endpoint.png"
+/>
 
 Following [this example](https://docs.aws.amazon.com/sagemaker/latest/dg/model-ab-testing.html) to create a A/B testing endpoint with two models. There are two options to distribute traffics or requests to two models
 
