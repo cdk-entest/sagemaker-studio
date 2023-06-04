@@ -120,6 +120,8 @@ predictor.predict(clean_ecg[:10000,:])
 
 Basically, trining job run containers with training script, model (image uri), and training data. Since the training data stored in S3, or local, or FileSystem, we need to understand how data is passed from sources to containers. Please check [blog](https://aws.amazon.com/blogs/machine-learning/choose-the-best-data-source-for-your-amazon-sagemaker-training-job/) to select suitable input mode
 
+![Uploading sagemaker-training-storage.png…]()
+
 ## Estimator Data Input
 
 There are some options to feed training data into a estimator.fit() for training [docs](https://sagemaker.readthedocs.io/en/stable/api/training/estimators.html#sagemaker.estimator.EstimatorBase). Under the hood, it call an API to create an training job with input and output data InputDataConfig as
