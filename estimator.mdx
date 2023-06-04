@@ -11,32 +11,26 @@ date: 2022-06-01
 [GitHub]() this note shows basics concepts of SageMaker Estimator API
 
 - Estimator: Built-In Algorithm, Framework, BYOM
-- Train a Built-In Algorithm
-- Fine Tune a Pre-trained Algorithm (GPT-J 6B)
-- Train a Framework Algorithm
-- Hyper Parameter Tunning
-- Deploy an Endpoing
-
-## Estimator API
-
-Normally, we develop a model using a framework such as neural net (NN) using a framework such as Tensorflow, PyTorch or Scikit-learn. In SageMaker, there are three main group of SageMaker Estimator.
-
-- Built-In Algorithm => call fit to train
-- Framework Algorithm => call fit(entry_point=your_script) to train
-- Bring Your Own Model (BYO) => provide your own container image
+- Estimator: Training Job
+- Estimator: Deploy Endpoint
 
 ## Estimator Class
 
-An estimator is used to train a ML algorithm, and it consits of at least the following component. For a buit-in algorithm or Amazon custom algorithm, we can ignore the the container iamge uri parameter.
+An estimator is an abstraction object with methods for training a model, deploying a model into an endpoint. It means that it will call AWS APIs under the hood to create training job, mode, endpoint, etc. Without this abstraction, it is possible to directly call APIs such as with Boto3 to create model, train, deploy. It has at least the following properties
 
 - Container image (container image uri)
 - Instance type which run the container
 - IAM Role for accessing S3 (data, code), CloudWatch logs
 
+Estimator class is organized into with based and child classes
+
+- Built-In Algorithm
+- Framework Algorithm
+- Bring Your Own Model (BYOM)
+
 Let create a estimator for PCA (built-in algorithm) using the based estimator class. First we need to find the iamge uri
 
 ```py
-# get sklearn image uri
 image_uri = sagemaker.estimator.image_uris.retrieve(
     framework="pca",
     region=os.environ["REGION"],
@@ -45,12 +39,45 @@ image_uri = sagemaker.estimator.image_uris.retrieve(
 )
 ```
 
-Then we can create a estimator using the SageMaker based Estimator class
+Then we can create an estimator using the SageMaker based Estimator class
 
 ```py
-# create an estimator
 estimator = sagemaker.estimator.Estimator(
-    image_uri=image_uri,
+InputDataConfig=[
+  {
+    'ChannelName': 'string',
+    'DataSource': {
+      'S3DataSource': {
+          'S3DataType': 'ManifestFile'|'S3Prefix'|'AugmentedManifestFile',
+          'S3Uri': 'string',
+          'S3DataDistributionType': 'FullyReplicated'|'ShardedByS3Key',
+          'AttributeNames': [
+              'string',
+          ],
+          'InstanceGroupNames': [
+              'string',
+          ]
+      },
+      'FileSystemDataSource': {
+          'FileSystemId': 'string',
+          'FileSystemAccessMode': 'rw'|'ro',
+          'FileSystemType': 'EFS'|'FSxLustre',
+          'DirectoryPath': 'string'
+      }
+    },
+    'ContentType': 'string',
+    'CompressionType': 'None'|'Gzip',
+    'RecordWrapperType': 'None'|'RecordIO',
+    'InputMode': 'Pipe'|'File'|'FastFile',
+    'ShuffleConfig': {
+        'Seed': 123
+    }
+  },
+],
+    OutputDataConfig={
+        'KmsKeyId': 'string',
+        'S3OutputPath': 'string'
+    },    image_uri=image_uri,
     instance_type="ml.m4.xlarge",
     instance_count=1,
     # output_path="",
@@ -58,31 +85,81 @@ estimator = sagemaker.estimator.Estimator(
 )
 ```
 
-Then we can train the model by calling fit method on the estimator
+Then we can train the model by calling fit method on the estimator. Under the hood, this method call an API to create a training job [docs](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateTrainingJob.html). Please check [Boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_training_job.html) for detail
 
 ```py
-# set hyperparameter
 estimator.set_hyperparameters(
-    feature_dim=4, num_components=3, mini_batch_size=200
+    feature_dim=4,
+    num_components=3,
+    mini_batch_size=200
 )
 ```
 
 Train the model by creating a training job either by estimator.fit() or other methods to create a training job such as Boto3, TrainingStep in a pipeline.
 
 ```py
-# TODO: update
-estimator.fit()
+estimator.fit(inputs={"train": s3_train_data})
 ```
 
-Finally, we can deploy the model as a endpoint and invoke it
+Finally, we can deploy the model as a endpoint and invoke it. Under the hood, this method call an API to create an serving endpoint config and endpoint [docs](https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateEndpoint.html). Please check [Boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker/client/create_endpoint_config.html) for detail
 
 ```py
+predictor = estimator.deploy(
+    initial_instance_count=1,
+    instance_type="ml.t2.medium"
+)
+```
 
+Take note the endpoint and invoke. Under the hood, this method send a HTTP request to the endpoint
+
+```py
+predictor.predict(clean_ecg[:10000,:])
 ```
 
 ## Estimator Data Access
 
-There are some options to feed training data into a estimator.fit() for training [docs](https://sagemaker.readthedocs.io/en/stable/api/training/estimators.html#sagemaker.estimator.EstimatorBase)
+Basically, trining job run containers with training script, model (image uri), and training data. Since the training data stored in S3, or local, or FileSystem, we need to understand how data is passed from sources to containers. Please check [blog](https://aws.amazon.com/blogs/machine-learning/choose-the-best-data-source-for-your-amazon-sagemaker-training-job/) to select suitable input mode
+
+## Estimator Data Input
+
+There are some options to feed training data into a estimator.fit() for training [docs](https://sagemaker.readthedocs.io/en/stable/api/training/estimators.html#sagemaker.estimator.EstimatorBase). Under the hood, it call an API to create an training job with input and output data config as
+
+```json
+InputDataConfig=
+[
+{
+    'ChannelName': 'string',
+    'DataSource': {
+        'S3DataSource': {
+            'S3DataType': 'ManifestFile'|'S3Prefix'|'AugmentedManifestFile',
+            'S3Uri': 'string',
+            'S3DataDistributionType': 'FullyReplicated'|'ShardedByS3Key',
+            'AttributeNames': [
+                'string',
+            ],
+            'InstanceGroupNames': [
+                'string',
+            ]
+        },
+        'FileSystemDataSource': {
+            'FileSystemId': 'string',
+            'FileSystemAccessMode': 'rw'|'ro',
+            'FileSystemType': 'EFS'|'FSxLustre',
+            'DirectoryPath': 'string'
+        }
+    },
+    'ContentType': 'string',
+    'CompressionType': 'None'|'Gzip',
+    'RecordWrapperType': 'None'|'RecordIO',
+    'InputMode': 'Pipe'|'File'|'FastFile',
+    'ShuffleConfig': {
+        'Seed': 123
+    }
+},
+]
+```
+
+The Estimator object provide several options (interface) to feed data into a training job, but under the hood it call an API with the above spec.
 
 - Option 1. [TrainingInput](https://github.com/aws/amazon-sagemaker-examples/blob/main/introduction_to_amazon_algorithms/linear_learner_abalone/Linear_Learner_Regression_csv_format.ipynb)
 
@@ -110,27 +187,23 @@ linear.fit(inputs={"train": train_data, "validation": validation_data}, job_name
 Another example with PCA [HERE](https://cdk.entest.io/ml/pca-sagemaker)
 
 ```py
-# pca image uri
 image_uri = image_uris.retrieve(
     framework="pca",
     region=os.environ["REGION"],
     instance_type="t2.medium",
 )
-# pca estimator
-pca = sagemaker.estimator.Estimator(
+estimator = sagemaker.estimator.Estimator(
     role=config["SAGEMAKER_ROLE"],
     image_uri=image_uri,
     instance_count=1,
     instance_type="ml.c4.xlarge",
 )
-# set pca parameters
-pca.set_hyperparameters(
+estimator.set_hyperparameters(
     feature_dim=4,
     num_components=3,
     mini_batch_size=200,
 )
-# train the model
-pca.fit(
+estimator.fit(
     inputs={
         "train": TrainingInput(
             content_type="text/csv;label_size=0",
@@ -175,16 +248,11 @@ cifar10_estimator = PyTorch(
     role=role,
     framework_version='1.7.1',
     instance_count=1,
-    instance_type='local')
+    instance_type='local'
+)
 
 cifar10_estimator.fit(inputs)
 ```
-
-## Buit-In Algorithm
-
-## Framework Algorithm
-
-## BYO Model
 
 ## Reference
 
@@ -213,3 +281,5 @@ cifar10_estimator.fit(inputs)
 - [SM Simple PCA](https://sagemaker-examples.readthedocs.io/en/latest/introduction_to_amazon_algorithms/pca_mnist/pca_mnist.html)
 
 - [Local Mode Data Training](https://aws.amazon.com/blogs/machine-learning/use-the-amazon-sagemaker-local-mode-to-train-on-your-notebook-instance/)
+
+- [Local Mode Detail](https://sagemaker.readthedocs.io/en/stable/overview.html#local-mode)
