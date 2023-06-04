@@ -20,6 +20,96 @@ date: 2022-06-01
 
 ## A/B Testing Endpoint
 
+Following [this example](https://docs.aws.amazon.com/sagemaker/latest/dg/model-ab-testing.html) to create a A/B testing endpoint with two models. There are two options to distribute traffics or requests to two models
+
+- Specifying weights
+- Specifying invoking variants
+
+First, create two models
+
+```py
+from sagemaker.amazon.amazon_estimator import get_image_uri
+
+model_name = f"DEMO-xgb-churn-pred-{datetime.now():%Y-%m-%d-%H-%M-%S}"
+model_name2 = f"DEMO-xgb-churn-pred2-{datetime.now():%Y-%m-%d-%H-%M-%S}"
+image_uri = get_image_uri(boto3.Session().region_name, 'xgboost', '0.90-1')
+image_uri2 = get_image_uri(boto3.Session().region_name, 'xgboost', '0.90-2')
+
+sm_session.create_model(
+    name=model_name,
+    role=role,
+    container_defs={
+        'Image': image_uri,
+        'ModelDataUrl': model_url
+    }
+)
+
+sm_session.create_model(
+    name=model_name2,
+    role=role,
+    container_defs={
+        'Image': image_uri2,
+        'ModelDataUrl': model_url2
+    }
+)
+
+```
+
+Create two model variants
+
+```py
+from sagemaker.session import production_variant
+
+variant1 = production_variant(
+    model_name=model_name,
+    instance_type="ml.m5.xlarge",
+    initial_instance_count=1,
+    variant_name='Variant1',
+    initial_weight=1,
+)
+
+variant2 = production_variant(
+    model_name=model_name2,
+    instance_type="ml.m5.xlarge",
+    initial_instance_count=1,
+    variant_name='Variant2',
+    initial_weight=1,
+)
+```
+
+Create an endpoint with two variants
+
+```py
+endpoint_name = f"DEMO-xgb-churn-pred-{datetime.now():%Y-%m-%d-%H-%M-%S}"
+print(f"EndpointName={endpoint_name}")
+
+sm_session.endpoint_from_production_variants(
+    name=endpoint_name,
+    production_variants=[variant1, variant2]
+)
+```
+
+Invoke the deploy model
+
+```py
+# get a subset of test data for a quick test
+!tail -120 test_data/test-dataset-input-cols.csv > test_data/test_sample_tail_input_cols.csv
+print(f"Sending test traffic to the endpoint {endpoint_name}. \nPlease wait...")
+
+with open('test_data/test_sample_tail_input_cols.csv', 'r') as f:
+    for row in f:
+        print(".", end="", flush=True)
+        payload = row.rstrip('\n')
+        sm_runtime.invoke_endpoint(
+            EndpointName=endpoint_name,
+            ContentType="text/csv",
+            Body=payload
+        )
+        time.sleep(0.5)
+
+print("Done!")
+```
+
 ## Blue/Green Endpoint
 
 ## Canary Endpoint
