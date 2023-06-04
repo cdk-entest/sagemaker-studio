@@ -30,7 +30,17 @@ Import data to wrangler, and add analysis steps. Below is the entire flow
 
 ## Data Bias Detection
 
+Some questions about Bias
+
+- Does the group representation in the training data reflect the real world?
+- Does the model have different accuracy for different groups?
+
 [Quoted what is bias mean](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-detect-data-bias.html): An imbalance in the training data or the prediction behavior of the model across different groups, such as age or income bracket. Biases can result from the data or algorithm used to train your model. For instance, if an ML model is trained primarily on data from middle-aged individuals, it may be less accurate when making predictions involving younger and older people. [Sample Notebook](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-detect-data-bias.html) and [Blog](https://aws.amazon.com/blogs/machine-learning/learn-how-amazon-sagemaker-clarify-helps-detect-bias/)
+
+How to detecte bias
+
+- Wrangler bias report
+- Clarify for pre-training and post-training bias analysis
 
 Let use SageMaker Clarify to detect bias in data. Download this bank additional dataset
 
@@ -49,10 +59,15 @@ Create a wrangler flow, import data, and add an analysis to see the Bias report.
 - Predicted Y: term deposit
 - Bias analysis on column: martial
 
-The Bias report show some basic metrics
+The Bias report show some basic metrics such as [Class Imbalance](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-bias-metric-class-imbalance.html).
 
-- [Class Imbalancer](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-bias-metric-class-imbalance.html)
--
+```
+CI = (na - nd)(na + nd)
+```
+
+From the results, we observe a class imbalance where the married class is 21% more represented than other classes. We also observe that the married class is 2.8% less likely to subscribe to a bank term deposit.
+
+## SageMaker Clarify
 
 ## Reference
 
@@ -69,3 +84,5 @@ The Bias report show some basic metrics
 - [Bias One Vs All](https://catalog.us-east-1.prod.workshops.aws/workshops/327375b8-425b-49d4-b0da-241da0595ecf/en-US/tabular-data-lab/exploratory-data-analysis/bias-detection)
 
 - [Measure Bias Metrics Docs](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-measure-data-bias.html)
+
+- [SageMaker Clarify helps detect bias](https://aws.amazon.com/blogs/machine-learning/learn-how-amazon-sagemaker-clarify-helps-detect-bias/)
