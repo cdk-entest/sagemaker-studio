@@ -14,9 +14,68 @@ date: 2022-06-01
 - Update Models: A/B, Blue/Green, Canary
 - Model Monitoring
 
-## Standard Endpoint
+## Multi-Model Endpoint
 
-## Multi-Container Endpoint
+It is possible to host multiple models within container behind a endpoint to save cost. Follow [docs](https://docs.aws.amazon.com/sagemaker/latest/dg/create-multi-model-endpoint.html) to setup a MM endpoint. Then we can specify TargetModel when invoking a endpoint.
+
+Retrieve image url
+
+```py
+import sagemaker
+region = sagemaker_session.boto_region_name
+image = sagemaker.image_uris.retrieve("knn",region=region)
+container = {
+  'Image': image,
+  'ModelDataUrl': 's3://<BUCKET_NAME>/<PATH_TO_ARTIFACTS>',
+  'Mode': 'MultiModel'
+}
+```
+
+Create a model
+
+```py
+import boto3
+sagemaker_client = boto3.client('sagemaker')
+response = sagemaker_client.create_model(
+  ModelName = '<MODEL_NAME>',
+  ExecutionRoleArn = role,
+  Containers = [container])
+```
+
+Create an endpoint configuration
+
+```py
+response = sagemaker_client.create_endpoint_config(
+  EndpointConfigName = '<ENDPOINT_CONFIG_NAME>',
+  ProductionVariants=[
+       {
+          'InstanceType': 'ml.m4.xlarge',
+          'InitialInstanceCount': 2,
+          'InitialVariantWeight': 1,
+          'ModelName': '<MODEL_NAME>',
+          'VariantName': 'AllTraffic'
+        }
+  ]
+)
+```
+
+Create an endpoint
+
+```py
+response = sagemaker_client.create_endpoint(
+  EndpointName = '<ENDPOINT_NAME>',
+  EndpointConfigName = '<ENDPOINT_CONFIG_NAME>')
+```
+
+Invoke an endpont and specifying the TargetModel
+
+```py
+response = runtime_sagemaker_client.invoke_endpoint(
+  EndpointName = "<ENDPOINT_NAME>",
+  ContentType = "text/csv",
+  TargetModel = "<MODEL_FILENAME>.tar.gz",
+  Body = body)
+```
 
 ## A/B Testing Endpoint
 
@@ -121,3 +180,5 @@ print("Done!")
 - [Update Models in Production](https://docs.aws.amazon.com/sagemaker/latest/dg/deployment-guardrails.html)
 
 - [A/B Testing Safely Validate Model](https://docs.aws.amazon.com/sagemaker/latest/dg/model-ab-testing.html)
+
+- [Bring Your Own Container](https://docs.aws.amazon.com/sagemaker/latest/dg/build-multi-model-build-container.html)
