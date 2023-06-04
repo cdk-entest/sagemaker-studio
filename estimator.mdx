@@ -132,34 +132,31 @@ There are some options to feed training data into a estimator.fit() for training
 
 ```
 {
-    'ChannelName': 'string',
-    'DataSource': {
-        'S3DataSource': {
-            'S3DataType': 'ManifestFile'|'S3Prefix'|'AugmentedManifestFile',
-            'S3Uri': 'string',
-            'S3DataDistributionType': 'FullyReplicated'|'ShardedByS3Key',
-            'AttributeNames': [
-                'string',
-            ],
-            'InstanceGroupNames': [
-                'string',
-            ]
-        },
-        'FileSystemDataSource': {
-            'FileSystemId': 'string',
-            'FileSystemAccessMode': 'rw'|'ro',
-            'FileSystemType': 'EFS'|'FSxLustre',
-            'DirectoryPath': 'string'
-        }
+  "ChannelName": "string",
+  "DataSource": {
+    "S3DataSource": {
+      'S3DataType': 'ManifestFile'|'S3Prefix'|'AugmentedManifestFile',
+      "S3Uri": "string",
+      'S3DataDistributionType': 'FullyReplicated'|'ShardedByS3Key',
+      "AttributeNames": ["string"],
+      "InstanceGroupNames": ["string"]
     },
-    'ContentType': 'string',
-    'CompressionType': 'None'|'Gzip',
-    'RecordWrapperType': 'None'|'RecordIO',
-    'InputMode': 'Pipe'|'File'|'FastFile',
-    'ShuffleConfig': {
-        'Seed': 123
+    "FileSystemDataSource": {
+      "FileSystemId": "string",
+      'FileSystemAccessMode': 'rw'|'ro',
+      'FileSystemType': 'EFS'|'FSxLustre',
+      "DirectoryPath": "string"
     }
+  },
+  "ContentType": "string",
+  'CompressionType': 'None'|'Gzip',
+  'RecordWrapperType': 'None'|'RecordIO',
+  'InputMode': 'Pipe'|'File'|'FastFile',
+  "ShuffleConfig": {
+    "Seed": 123
+  }
 }
+
 ```
 
 The Estimator object provide several options (interface) to feed data into a training job, but under the hood it call an API with the above spec.
