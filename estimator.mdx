@@ -43,41 +43,7 @@ Then we can create an estimator using the SageMaker based Estimator class
 
 ```py
 estimator = sagemaker.estimator.Estimator(
-InputDataConfig=[
-  {
-    'ChannelName': 'string',
-    'DataSource': {
-      'S3DataSource': {
-          'S3DataType': 'ManifestFile'|'S3Prefix'|'AugmentedManifestFile',
-          'S3Uri': 'string',
-          'S3DataDistributionType': 'FullyReplicated'|'ShardedByS3Key',
-          'AttributeNames': [
-              'string',
-          ],
-          'InstanceGroupNames': [
-              'string',
-          ]
-      },
-      'FileSystemDataSource': {
-          'FileSystemId': 'string',
-          'FileSystemAccessMode': 'rw'|'ro',
-          'FileSystemType': 'EFS'|'FSxLustre',
-          'DirectoryPath': 'string'
-      }
-    },
-    'ContentType': 'string',
-    'CompressionType': 'None'|'Gzip',
-    'RecordWrapperType': 'None'|'RecordIO',
-    'InputMode': 'Pipe'|'File'|'FastFile',
-    'ShuffleConfig': {
-        'Seed': 123
-    }
-  },
-],
-    OutputDataConfig={
-        'KmsKeyId': 'string',
-        'S3OutputPath': 'string'
-    },    image_uri=image_uri,
+    image_uri=image_uri,
     instance_type="ml.m4.xlarge",
     instance_count=1,
     # output_path="",
