@@ -69,6 +69,90 @@ From the results, we observe a class imbalance where the married class is 21% mo
 
 ## SageMaker Clarify
 
+Follow [this notebook](https://sagemaker-examples.readthedocs.io/en/latest/sagemaker-clarify/fairness_and_explainability/fairness_and_explainability.html) to understand how to use SageMaker Clarify to detect bias pre-training and post-training.
+
+Inspect male versus female representation in label
+
+```py
+training_data["Sex"].value_counts().sort_values().plot(kind="bar", title="Counts of Sex", rot=0)
+```
+
+Inspect male versus female representation in possible label
+
+```py
+training_data["Sex"].where(training_data["Target"] == ">50K").value_counts().sort_values().plot(
+    kind="bar", title="Counts of Sex earning >$50K", rot=0
+)
+```
+
+Create SageMaker Clarify Processor
+
+```py
+clarify_processor = clarify.SageMakerClarifyProcessor(
+    role=role,
+    instance_count=1,
+    instance_type="ml.m5.xlarge",
+    sagemaker_session=sagemaker_session
+)
+```
+
+Create Writing DataConfig which communicates some basic information about data I/O to SageMaker Clarify.
+
+```py
+bias_report_output_path = "s3://{}/{}/clarify-bias".format(bucket, prefix)
+bias_data_config = clarify.DataConfig(
+    s3_data_input_path=train_uri,
+    s3_output_path=bias_report_output_path,
+    label="Target",
+    headers=training_data.columns.to_list(),
+    dataset_type="text/csv",
+)
+```
+
+Create Writing ModelConfig which is an object communicates information about your trained model.
+
+```py
+model_config = clarify.ModelConfig(
+    model_name=model_name,
+    instance_type="ml.m5.xlarge",
+    instance_count=1,
+    accept_type="text/csv",
+    content_type="text/csv",
+)
+```
+
+Create Writing ModelPredictedLabelConfig provides information on the format of your predictions
+
+```py
+predictions_config = clarify.ModelPredictedLabelConfig(probability_threshold=0.8)
+```
+
+Create Writing BiasConfig contains configuration values for detecting bias using a Clarify container.
+
+```py
+bias_config = clarify.BiasConfig(
+    label_values_or_threshold=[1],
+    facet_name="Sex",
+    facet_values_or_threshold=[0],
+    group_name="Age"
+)
+```
+
+Run the Clarify Processor to get bias information post-training
+
+```py
+clarify_processor.run_bias(
+    data_config=bias_data_config,
+    bias_config=bias_config,
+    model_config=model_config,
+    model_predicted_label_config=predictions_config,
+    pre_training_methods="all",
+    post_training_methods="all",
+)
+```
+
+Finally, you can find the bias report in SageMaker Studio Experiments.
+
 ## Reference
 
 - [SageMaker Immersion Day](https://catalog.us-east-1.prod.workshops.aws/workshops/63069e26-921c-4ce1-9cc7-dd882ff62575/en-US/lab1/option1)
