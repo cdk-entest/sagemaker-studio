@@ -122,11 +122,9 @@ Basically, trining job run containers with training script, model (image uri), a
 
 ## Estimator Data Input
 
-There are some options to feed training data into a estimator.fit() for training [docs](https://sagemaker.readthedocs.io/en/stable/api/training/estimators.html#sagemaker.estimator.EstimatorBase). Under the hood, it call an API to create an training job with input and output data config as
+There are some options to feed training data into a estimator.fit() for training [docs](https://sagemaker.readthedocs.io/en/stable/api/training/estimators.html#sagemaker.estimator.EstimatorBase). Under the hood, it call an API to create an training job with input and output data InputDataConfig as
 
 ```json
-InputDataConfig=
-[
 {
     'ChannelName': 'string',
     'DataSource': {
@@ -155,8 +153,7 @@ InputDataConfig=
     'ShuffleConfig': {
         'Seed': 123
     }
-},
-]
+}
 ```
 
 The Estimator object provide several options (interface) to feed data into a training job, but under the hood it call an API with the above spec.
@@ -264,7 +261,7 @@ cifar10_estimator.fit(inputs)
 
 - [SM Enviornment Variables](https://github.com/aws/sagemaker-training-toolkit/blob/master/ENVIRONMENT_VARIABLES.md#sm_channel_channel_name)
 
-- [SM Enviornment Variables and Tensorflow] (https://github.com/aws/amazon-sagemaker-examples/blob/main/frameworks/tensorflow/code/train.py)
+- [SM Enviornment Variables and Tensorflow](https://github.com/aws/amazon-sagemaker-examples/blob/main/frameworks/tensorflow/code/train.py)
 
 - [Simple BYOM](https://github.com/aws/amazon-sagemaker-examples/blob/main/sagemaker-script-mode/sklearn/sklearn_byom_outputs.ipynb)
 
