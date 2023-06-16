@@ -168,9 +168,10 @@ Please take note the trust policy for the DS Role
 
 ## Install Packages
 
-- Select correct environment
-- Install wanted packages
+- Select correct environment and install wanted packages
 - Pre-installed by life cycle configuration
+- [LSP](https://github.com/cdk-entest/sagemaker-studio/blob/master/lifecycle-config/lsp-advanced.sh)
+- [Auto Shutdown](https://github.com/cdk-entest/sagemaker-studio/blob/master/lifecycle-config/auto-shut-down.sh)
 
 As recommended by the [docs](https://docs.aws.amazon.com/sagemaker/latest/dg/nbi-add-external.html), install from Notebook is the best because it ensure the correct environment selected
 
