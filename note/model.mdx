@@ -1,0 +1,239 @@
+---
+title: sagemaker model and model registry
+description: sagemaker model and model registry
+author: haimtran
+publishedDate: 01/06/2023
+date: 2022-06-01
+---
+
+## Introduction
+
+[GitHub]() this note shows basics of SageMaker Model and SageMaker Registry
+
+- SageMaker Model Anatomy
+- Model with SageMaker SDK
+- Model with Boto3 SageMaker
+- Model Registry
+- Bring Your Own Model
+
+## Model Anatomy
+
+A deployable model consists of at least below basic components
+
+- Container image URI
+- Training and inference code
+- Execution Role
+- ModelDataUrl which contains metadata stored in S3
+
+There are different ways to create a Model in SageMaker
+
+- SageMaker Estimator has a a method create_model
+- Boto3 SageMaker client can create models
+- CDK and CloudFormation termplate can create models
+
+It is possible to [bring your own model]() by following this project template consistsing of Dockerfile and project strucutre (train, serve, ngix, flask). From a Model we can deploy endpoints by either Boto3 or calling deploy method on the model object.
+
+## Model with SageMaker SDK
+
+Let create a PCA Model object using SageMaker SDK. Firt we need to retrieve the container image URI, detail [HERE]()
+
+```py
+image_uri = retrieve(
+    framework="pca",
+    region=session._region_name,
+    instance_type="ml.m4.xlarge",
+    version="0.23-1"
+)
+```
+
+Then we need to provie the [ModelDataUrl]() which genenrated from output of a training job.
+
+```py
+model = Model(
+    image_uri=image_uri,
+    model_data="s3://training-output/model.tar.gz",
+    role=role,
+    name="PCACreatedFromNoteBookModel"
+)
+```
+
+To actually create a model (infrastructure) in SageMaker we need to call the create method on the model object
+
+```py
+model.create(instance_type="ml.m4.xlarge")
+```
+
+Finally, we can call the method deploy on the model object to create a endpoint for serving
+
+```py
+model.deploy(
+    initial_instance_count=1,
+    instance_type="ml.m4.xlarge"
+)
+```
+
+## Model with Boto3 SageMaker
+
+## Model Registry
+
+The Model Registry help a Data Scientist team develop and manage models at scale. For example, we can gropu mutiple models which solving the same challenge, and/or version model, approve before models can be deployed into endpoints. There are three basic objects
+
+- Model Packagke Group
+- Register a Model to the Group
+- Deploy a Model in the Registry to an Endpoint
+
+Let create a model Packagke Group
+
+```py
+model_package_group_input_dict = {
+    "ModelPackageGroupName": "ecg-model-group",
+    "ModelPackageGroupDescription": "develop model for ECG"
+}
+```
+
+```py
+response = sagemaker_client.create_model_package_group(
+ **model_package_group_input_dict
+)
+```
+
+To register a model to the model package group, there are different ways. First option, after creating a model using SageMaker SDK, we can call register on the model object
+
+```
+model.register(
+    model_package_group_name="ecg-model-group",
+    content_types=["text/csv"],
+    inference_instances=["ml.m5.xlarge"],
+    transform_instances=["ml.m5.xlarge"],
+    response_types=["text/csv"],
+    customer_metadata_properties={"ModelType": "PCA"},
+    # model_metrics=None,
+    approval_status="PendingManualApproval"
+)
+```
+
+Second option, we can use Boto3 SageMaker
+
+```py
+create_model_package_input_dict = {
+    "ModelPackageGroupName": "ecg-model-group",
+    "ModelPackageDescription": "",
+    "ModelApprovalStatus" : "PendingManualApproval",
+    "InferenceSpecification": {
+        "Containers": [
+            {
+                "Image": image_uri,
+                "ModelDataUrl": "s3://training-output/model.tar.gz"
+            }
+        ],
+      "SupportedContentTypes": [ "text/csv" ],
+      "SupportedResponseMIMETypes": [ "text/csv" ],
+    }
+}
+
+response = sagemaker_client.create_model_package(
+    **create_model_package_input_dict
+)
+```
+
+Then we can describe the model package group
+
+```py
+sagemaker_client.list_model_packages(
+    ModelPackageGroupName="ecg-model-group"
+)
+```
+
+and describe a model package
+
+```py
+sagemaker_client.describe_model_package(
+    ModelPackageName="model_arn"
+)
+```
+
+## Model Deploy
+
+Ensure that the model is approved
+
+```py
+sagemaker_client.update_model_package(
+    ModelPackageArn=model_package_arn,
+    ModelApprovalStatus="Approved"
+)
+```
+
+and create a model from the model package
+
+```py
+response = sagemaker_client.create_model(
+    ModelName=model_name,
+    ExecutionRoleArn=role,
+    Containers=[
+        {
+            "ModelPackageName": model_package_arn
+        }
+    ]
+)
+```
+
+To deploy a model into an endpoint there are at least two methods. First option, call the method deploy directly from the model object.
+
+```py
+model.deploy(
+    initial_instance_count=1,
+    instance_type="ml.m4.xlarge"
+)
+```
+
+Second option, use Boto3 SageMaker. We need to create endpoint configuration
+
+```py
+endpoint_config = sagemaker_client.create_endpoint_config(
+    EndpointConfigName=endpoint_config_name,
+    ProductionVariants=[
+        {
+            "InitialInstanceCount": 1,
+            "InstanceType": "ml.m4.xlarge",
+            "ModelName": model_name,
+            "VariantName": "AllTraffic",
+        }
+    ]
+)
+```
+
+Then we create a endpoint
+
+```py
+response = sagemaker_client.create_endpoint(
+    EndpointName=endpoint_name,
+    EndpointConfigName=endpoint_config_name
+)
+```
+
+Test the endpoint by invocation via run-time or Estimator object
+
+```py
+runtime = boto3.client("sagemaker-runtime")
+response = runtime.invoke_endpoint(
+    EndpointName=endpoint_name,
+     Body="1,2,3,4\n1,2,3,4\n2,3,4,5",
+    ContentType="text/csv"
+)
+result = json.loads(response['Body'].read())
+print(json.dumps(result, indent=4, default=str))
+```
+
+## Bring Your Own Model
+
+## Reference
+
+- [Model Artifact](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-marketplace-develop.html)
+
+- [SageMaker SDK Model](https://sagemaker.readthedocs.io/en/stable/api/inference/model.html)
+
+- [Retrieve Pre-Built SageMaker Docker Image](https://sagemaker.readthedocs.io/en/stable/api/utility/image_uris.html)
+
+- [SageMaker Docker Registry Paths](https://docs.aws.amazon.com/sagemaker/latest/dg-ecr-paths/ecr-ap-southeast-1.html#pca-ap-southeast-1.title)
+
+- [SageMaker Create Endpoint Config](https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints-deployment.html)

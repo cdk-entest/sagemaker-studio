@@ -1,0 +1,173 @@
+---
+title: bias detection and sagemaker clarify
+description: bias detection and sagemaker clarify
+author: haimtran
+publishedDate: 01/06/2023
+date: 2022-06-01
+---
+
+## Introduction
+
+- Data Wrangler
+- Basic Bias
+- SageMaker Clarify
+
+## Wrangler Flow
+
+Let create a simple data flow with wrangler to
+
+- check data quality
+- drop some columns
+- fill missing values
+- add processing job
+
+Upload the raw ecg data to s3
+
+```
+aws s3 cp 171A_raw.csv s3://bucket-name/ecg/
+```
+
+Import data to wrangler, and add analysis steps. Below is the entire flow
+
+## Data Bias Detection
+
+Some questions about Bias
+
+- Does the group representation in the training data reflect the real world?
+- Does the model have different accuracy for different groups?
+
+[Quoted what is bias mean](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-detect-data-bias.html): An imbalance in the training data or the prediction behavior of the model across different groups, such as age or income bracket. Biases can result from the data or algorithm used to train your model. For instance, if an ML model is trained primarily on data from middle-aged individuals, it may be less accurate when making predictions involving younger and older people. [Sample Notebook](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-detect-data-bias.html) and [Blog](https://aws.amazon.com/blogs/machine-learning/learn-how-amazon-sagemaker-clarify-helps-detect-bias/)
+
+How to detecte bias
+
+- Wrangler bias report
+- Clarify for pre-training and post-training bias analysis
+
+Let use SageMaker Clarify to detect bias in data. Download this bank additional dataset
+
+```bash
+wget https://sagemaker-sample-data-us-west-2.s3-us-west-2.amazonaws.com/autopilot/direct_marketing/bank-additional.zip
+```
+
+Then unzip and upload to S3
+
+```bash
+aws s3 cp . s3://bucket-name/bank-additional/ --recursive
+```
+
+Create a wrangler flow, import data, and add an analysis to see the Bias report.
+
+- Predicted Y: term deposit
+- Bias analysis on column: martial
+
+The Bias report show some basic metrics such as [Class Imbalance](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-bias-metric-class-imbalance.html).
+
+```
+CI = (na - nd)(na + nd)
+```
+
+From the results, we observe a class imbalance where the married class is 21% more represented than other classes. We also observe that the married class is 2.8% less likely to subscribe to a bank term deposit.
+
+## SageMaker Clarify
+
+Follow [this notebook](https://sagemaker-examples.readthedocs.io/en/latest/sagemaker-clarify/fairness_and_explainability/fairness_and_explainability.html) to understand how to use SageMaker Clarify to detect bias pre-training and post-training.
+
+Inspect male versus female representation in label
+
+```py
+training_data["Sex"].value_counts().sort_values().plot(kind="bar", title="Counts of Sex", rot=0)
+```
+
+Inspect male versus female representation in possible label
+
+```py
+training_data["Sex"].where(training_data["Target"] == ">50K").value_counts().sort_values().plot(
+    kind="bar", title="Counts of Sex earning >$50K", rot=0
+)
+```
+
+Create SageMaker Clarify Processor
+
+```py
+clarify_processor = clarify.SageMakerClarifyProcessor(
+    role=role,
+    instance_count=1,
+    instance_type="ml.m5.xlarge",
+    sagemaker_session=sagemaker_session
+)
+```
+
+Create Writing DataConfig which communicates some basic information about data I/O to SageMaker Clarify.
+
+```py
+bias_report_output_path = "s3://{}/{}/clarify-bias".format(bucket, prefix)
+bias_data_config = clarify.DataConfig(
+    s3_data_input_path=train_uri,
+    s3_output_path=bias_report_output_path,
+    label="Target",
+    headers=training_data.columns.to_list(),
+    dataset_type="text/csv",
+)
+```
+
+Create Writing ModelConfig which is an object communicates information about your trained model.
+
+```py
+model_config = clarify.ModelConfig(
+    model_name=model_name,
+    instance_type="ml.m5.xlarge",
+    instance_count=1,
+    accept_type="text/csv",
+    content_type="text/csv",
+)
+```
+
+Create Writing ModelPredictedLabelConfig provides information on the format of your predictions
+
+```py
+predictions_config = clarify.ModelPredictedLabelConfig(probability_threshold=0.8)
+```
+
+Create Writing BiasConfig contains configuration values for detecting bias using a Clarify container.
+
+```py
+bias_config = clarify.BiasConfig(
+    label_values_or_threshold=[1],
+    facet_name="Sex",
+    facet_values_or_threshold=[0],
+    group_name="Age"
+)
+```
+
+Run the Clarify Processor to get bias information of post-training and pre-training
+
+```py
+clarify_processor.run_bias(
+    data_config=bias_data_config,
+    bias_config=bias_config,
+    model_config=model_config,
+    model_predicted_label_config=predictions_config,
+    pre_training_methods="all",
+    post_training_methods="all",
+)
+```
+
+Finally, you can find the bias report in SageMaker Studio Experiments.
+
+## Reference
+
+- [SageMaker Immersion Day](https://catalog.us-east-1.prod.workshops.aws/workshops/63069e26-921c-4ce1-9cc7-dd882ff62575/en-US/lab1/option1)
+
+- [SageMaker Data Wrangler](https://catalog.us-east-1.prod.workshops.aws/workshops/327375b8-425b-49d4-b0da-241da0595ecf/en-US/time-series-lab/03-remove-redundant-columns)
+
+- [Bias Metrics Explain](https://aws.amazon.com/blogs/machine-learning/learn-how-amazon-sagemaker-clarify-helps-detect-bias/)
+
+- [Bias Notebook](https://sagemaker-examples.readthedocs.io/en/latest/sagemaker-clarify/fairness_and_explainability/fairness_and_explainability.html)
+
+- [Bias Metrics in Finance Paper](https://pages.awscloud.com/rs/112-TZM-766/images/Fairness.Measures.for.Machine.Learning.in.Finance.pdf)
+
+- [Bias One Vs All](https://catalog.us-east-1.prod.workshops.aws/workshops/327375b8-425b-49d4-b0da-241da0595ecf/en-US/tabular-data-lab/exploratory-data-analysis/bias-detection)
+
+- [Measure Bias Metrics Docs](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-measure-data-bias.html)
+
+- [SageMaker Clarify helps detect bias](https://aws.amazon.com/blogs/machine-learning/learn-how-amazon-sagemaker-clarify-helps-detect-bias/)
