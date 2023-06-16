@@ -1,0 +1,115 @@
+{
+  "metadata": {
+    "version": 1,
+    "disable_limits": false,
+    "instance_type": "ml.m5.4xlarge"
+  },
+  "parameters": [],
+  "nodes": [
+    {
+      "node_id": "bb9d3dda-e168-40ff-bead-7c4f62473ec8",
+      "type": "SOURCE",
+      "operator": "sagemaker.s3_source_0.1",
+      "parameters": {
+        "dataset_definition": {
+          "__typename": "S3CreateDatasetDefinitionOutput",
+          "datasetSourceType": "S3",
+          "name": "bank-additional-full.csv",
+          "description": null,
+          "s3ExecutionContext": {
+            "__typename": "S3ExecutionContext",
+            "s3Uri": "s3://sagemaker-ap-southeast-1-140149423990/bank/bank-additional-full.csv",
+            "s3ContentType": "csv",
+            "s3HasHeader": true,
+            "s3FieldDelimiter": ",",
+            "s3DirIncludesNested": false,
+            "s3AddsFilenameColumn": false,
+            "s3RoleArn": null
+          }
+        }
+      },
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "default"
+        }
+      ]
+    },
+    {
+      "node_id": "88e2f5c9-9ef2-4bde-b5a6-88f9d7101a02",
+      "type": "TRANSFORM",
+      "operator": "sagemaker.spark.infer_and_cast_type_0.1",
+      "parameters": {},
+      "trained_parameters": {
+        "schema": {
+          "age": "long",
+          "job": "string",
+          "marital": "string",
+          "education": "string",
+          "default": "string",
+          "housing": "string",
+          "loan": "string",
+          "contact": "string",
+          "month": "string",
+          "day_of_week": "string",
+          "duration": "long",
+          "campaign": "long",
+          "pdays": "long",
+          "previous": "long",
+          "poutcome": "string",
+          "emp.var.rate": "string",
+          "cons.price.idx": "string",
+          "cons.conf.idx": "string",
+          "euribor3m": "float",
+          "nr.employed": "string",
+          "y": "string"
+        }
+      },
+      "inputs": [
+        {
+          "name": "default",
+          "node_id": "bb9d3dda-e168-40ff-bead-7c4f62473ec8",
+          "output_name": "default"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "default"
+        }
+      ]
+    },
+    {
+      "node_id": "db46f0b2-686d-4205-a4a6-8170444e9061",
+      "type": "VISUALIZATION",
+      "operator": "sagemaker.visualizations.bias_report_0.1",
+      "parameters": {
+        "name": "test",
+        "is_label_value_or_threshold": "value",
+        "is_facet_value_or_threshold": "value",
+        "default_metrics": {
+          "CI": true,
+          "DPL": true,
+          "JS": true,
+          "CDDL": false
+        },
+        "show_additional_metrics": "no",
+        "facet_values": "",
+        "label_name": "y",
+        "label_values": "yes",
+        "facet_name": "marital"
+      },
+      "inputs": [
+        {
+          "name": "df",
+          "node_id": "88e2f5c9-9ef2-4bde-b5a6-88f9d7101a02",
+          "output_name": "default"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "default"
+        }
+      ]
+    }
+  ]
+}
