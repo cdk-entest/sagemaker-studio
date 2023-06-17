@@ -9,8 +9,8 @@ date: 2022-06-01
 ## Introduction
 
 - Data Wrangler
-- Basic Bias
-- SageMaker Clarify
+- Basic Bias: 21 metrics
+- SageMaker Clarify [notebook](https://github.com/cdk-entest/sagemaker-studio/blob/master/notebook/day-1/sg-clarify.ipynb)
 
 ## Wrangler Flow
 
@@ -35,6 +35,7 @@ Some questions about Bias
 
 - Does the group representation in the training data reflect the real world?
 - Does the model have different accuracy for different groups?
+- Is the model performance equal for different gorups or facets?
 
 [Quoted what is bias mean](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-detect-data-bias.html): An imbalance in the training data or the prediction behavior of the model across different groups, such as age or income bracket. Biases can result from the data or algorithm used to train your model. For instance, if an ML model is trained primarily on data from middle-aged individuals, it may be less accurate when making predictions involving younger and older people. [Sample Notebook](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-detect-data-bias.html) and [Blog](https://aws.amazon.com/blogs/machine-learning/learn-how-amazon-sagemaker-clarify-helps-detect-bias/)
 
@@ -68,24 +69,164 @@ CI = (na - nd)(na + nd)
 
 From the results, we observe a class imbalance where the married class is 21% more represented than other classes. We also observe that the married class is 2.8% less likely to subscribe to a bank term deposit.
 
-## SageMaker Clarify
+## SageMaker Clarify - UCI DataSet
 
 Follow [this notebook](https://sagemaker-examples.readthedocs.io/en/latest/sagemaker-clarify/fairness_and_explainability/fairness_and_explainability.html) to understand how to use SageMaker Clarify to detect bias pre-training and post-training.
 
-Inspect male versus female representation in label
+Let download another dataset which is the UCI dataset. This predict income greater or less than 50K.
 
 ```py
-training_data["Sex"].value_counts().sort_values().plot(kind="bar", title="Counts of Sex", rot=0)
-```
+from sagemaker.s3 import S3Downloader
 
-Inspect male versus female representation in possible label
+adult_columns = [
+    "Age",
+    "Workclass",
+    "fnlwgt",
+    "Education",
+    "Education-Num",
+    "Marital Status",
+    "Occupation",
+    "Relationship",
+    "Ethnic group",
+    "Sex",
+    "Capital Gain",
+    "Capital Loss",
+    "Hours per week",
+    "Country",
+    "Target",
+]
 
-```py
-training_data["Sex"].where(training_data["Target"] == ">50K").value_counts().sort_values().plot(
-    kind="bar", title="Counts of Sex earning >$50K", rot=0
+
+S3Downloader.download(
+    s3_uri=f"s3://sagemaker-example-files-prod-{region}/datasets/tabular/uci_adult/adult.data",
+    local_path="./",
+    sagemaker_session=session,
 )
 ```
 
+Let analyse and visualize it sex column, how male versus female represents in data and in label.
+
+```py
+training_data = pd.read_csv(
+    "adult.data", names=adult_columns, sep=r"\s*,\s*", engine="python", na_values="?"
+).dropna()
+
+training_data["Sex"].value_counts().plot.bar()
+plt.title("Count of Sex")
+plt.show()
+
+training_data["Sex"].where(training_data["Target"] == ">50K").value_counts().plot.bar()
+plt.title("Counts of Sex earning >$50K")
+plt.show()
+```
+
+## SageMaker Clarify -- Prepare Data
+
+Now let prepare data for training a XGBoost algorithm. We need to convert catalogrical into numerical using a number_encode_features function as below.
+
+```py
+from sklearn import preprocessing
+
+def number_encode_features(df: pd.DataFrame):
+    """
+    convert categorical to numerical
+    """
+    result = df.copy()
+    encoders = {}
+    for column in result.columns:
+        if result.dtypes[column] == object:
+            encoders[column] = preprocessing.LabelEncoder()
+            result[column] = encoders[column].fit_transform(
+                result[column].fillna("None")
+            )
+
+    return result, encoders
+```
+
+Create train and test data
+
+```py
+# swap the target as first column
+training_data = pd.concat(
+    [training_data["Target"], training_data.drop(["Target"], axis=1)], axis=1
+)
+
+# swap the target as first column
+testing_data = pd.concat(
+    [testing_data["Target"], testing_data.drop(["Target"], axis=1)], axis=1
+)
+
+# save train data to csv
+training_data, _ = number_encode_features(training_data)
+training_data.to_csv("train_data.csv", index=False, header=False)
+
+# save test data to csv
+testing_data, _ = number_encode_features(testing_data)
+testing_data.to_csv("test_features.csv", index=False, header=False)
+```
+
+## SageMaker Clarify -- Train Model
+
+Let create TrainingInput object
+
+````py
+from sagemaker.inputs import TrainingInput
+from sagemaker.s3 import S3Uploader
+prefix = "sagemaker-clarify"
+
+# upload train data to s3
+train_uri = S3Uploader.upload(
+    local_path="./train_data.csv", desired_s3_uri=f"s3://{bucket}/{prefix}"
+)
+
+# upload test data to s3
+test_uri = S3Uploader.upload(
+    local_path="./test_features.csv", desired_s3_uri=f"s3://{bucket}/{prefix}"
+)
+```
+
+Let create a XGBoost model
+
+```py
+from sagemaker.inputs import TrainingInput
+from sagemaker.s3 import S3Uploader
+
+xgboost_image_uri = retrieve("xgboost", region, version="1.5-1")
+
+xgb = Estimator(
+    xgboost_image_uri,
+    role,
+    instance_count=1,
+    instance_type="ml.m5.xlarge",
+    disable_profiler=True,
+    sagemaker_session=session,
+)
+
+xgb.set_hyperparameters(
+    max_depth=5,
+    eta=0.2,
+    gamma=4,
+    min_child_weight=6,
+    subsample=0.8,
+    objective="binary:logistic",
+    num_round=800,
+)
+
+xgb.fit({"train": train_input}, logs=False)
+```
+
+After training, we have to create a Model object
+
+
+```py
+from datetime import datetime
+model_name = f"demo-clarify-bias-{datetime.now().strftime('%d-%m-%Y-%H-%M-%S')}"
+model = xgb.create_model(name=model_name)
+model.create()
+```
+
+## SageMaker Clarify -- Processor
+To get the bias report pre and post training, we need to run a SageMaker Clarify processing
 Create SageMaker Clarify Processor
 
 ```py
@@ -93,15 +234,14 @@ clarify_processor = clarify.SageMakerClarifyProcessor(
     role=role,
     instance_count=1,
     instance_type="ml.m5.xlarge",
-    sagemaker_session=sagemaker_session
+    sagemaker_session=session
 )
 ```
 
 Create Writing DataConfig which communicates some basic information about data I/O to SageMaker Clarify.
 
 ```py
-bias_report_output_path = "s3://{}/{}/clarify-bias".format(bucket, prefix)
-bias_data_config = clarify.DataConfig(
+data_config = clarify.DataConfig(
     s3_data_input_path=train_uri,
     s3_output_path=bias_report_output_path,
     label="Target",
@@ -125,7 +265,7 @@ model_config = clarify.ModelConfig(
 Create Writing ModelPredictedLabelConfig provides information on the format of your predictions
 
 ```py
-predictions_config = clarify.ModelPredictedLabelConfig(probability_threshold=0.8)
+prediction_config = clarify.ModelPredictedLabelConfig(probability_threshold=0.8)
 ```
 
 Create Writing BiasConfig contains configuration values for detecting bias using a Clarify container.
@@ -135,7 +275,7 @@ bias_config = clarify.BiasConfig(
     label_values_or_threshold=[1],
     facet_name="Sex",
     facet_values_or_threshold=[0],
-    group_name="Age"
+    group_name="Age",
 )
 ```
 
@@ -143,16 +283,39 @@ Run the Clarify Processor to get bias information of post-training and pre-train
 
 ```py
 clarify_processor.run_bias(
-    data_config=bias_data_config,
+    data_config=data_config,
     bias_config=bias_config,
     model_config=model_config,
-    model_predicted_label_config=predictions_config,
+    model_predicted_label_config=prediction_config,
     pre_training_methods="all",
-    post_training_methods="all",
+    post_training_methods="all"
 )
 ```
 
-Finally, you can find the bias report in SageMaker Studio Experiments.
+Finally, you can find the bias report in SageMaker Studio Experiments, or read the report in json format as below
+
+```json
+{
+  "name": "CI",
+  "description": "Class Imbalance (CI)",
+  "value": 0.3513692725946555
+},
+{
+  "name": "DPL",
+  "description": "Difference in Positive Proportions in Labels (DPL)",
+  "value": 0.20015891077100018
+},
+{
+  "name": "JS",
+  "description": "Jensen-Shannon Divergence (JS)",
+  "value": 0.03075614465977302
+},
+{
+  "name": "KL",
+  "description": "Kullback-Liebler Divergence (KL)",
+  "value": 0.14306865156306428
+},
+```
 
 ## Reference
 
@@ -173,3 +336,6 @@ Finally, you can find the bias report in SageMaker Studio Experiments.
 - [SageMaker Clarify helps detect bias](https://aws.amazon.com/blogs/machine-learning/learn-how-amazon-sagemaker-clarify-helps-detect-bias/)
 
 - [Explaining and Measuring Pre-Training Bias](https://datachef.co/blog/measuring-pre-training-bias-of-datasets-using-sagemaker-clarify/)
+
+- [SageMaker Clarify Code Repository](https://github.com/aws/amazon-sagemaker-clarify)
+````
