@@ -199,6 +199,13 @@ pip install jupyterlab-lsp \
     jupyterlab-spellchecker
 ```
 
+Please use this to prevent error SageMaker Launcher not appear :smile:
+
+```bash
+pip install jupyterlab-lsp \
+    jupyterlab-spellchecker
+```
+
 Then restart the jupyter server, wait for the terminal closed and refresh the browser notebook
 
 ```bash
