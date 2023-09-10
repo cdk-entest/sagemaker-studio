@@ -22,7 +22,7 @@ There are basic concepts
 - share location
 - apps
 
-![studio-components (1)](https://github.com/cdk-entest/sagemaker-studio/assets/20411077/79955a11-71f5-4591-9b40-05c7811faa26)
+![sagemaker-studio-arch](/assets/sagemaker-studio-arch.png)
 
 ## Data Scientist
 
@@ -252,6 +252,28 @@ aws sagemaker create-studio-lifecycle-config \
 - Step 4. To make sure it work, either stop and start apps again
 
 Similarly, follow the same procedure to setup a shutdown script for SageMaker studio at domain or user profile level. Please note that we have to target JupyterAppServer in this case instead of KernelGateway. [auto-shutdown-script.sh](https://github.com/aws-samples/sagemaker-studio-lifecycle-config-examples/tree/main/scripts/install-autoshutdown-server-extension)
+
+## Code Server
+
+It is possible to create a code server running on SageMaker then we have vscode as normal. First, let go into SageMaker studio system terminal and install
+
+```bash
+curl -LO https://github.com/aws-samples/amazon-sagemaker-codeserver/releases/download/v0.1.5/amazon-sagemaker-codeserver-0.1.5.tar.gz
+tar -xvzf amazon-sagemaker-codeserver-0.1.5.tar.gz
+
+cd amazon-sagemaker-codeserver/install-scripts/studio
+
+chmod +x install-codeserver.sh
+./install-codeserver.sh
+```
+
+Second, from SageMaker studio launcher, we see the code server enabled as below picture
+
+Third, start using the code server either via web or from local vscode via remote access. Select python intepreter and install dependencies
+
+```bash
+
+```
 
 ## SageMaker Feature Store
 
@@ -729,8 +751,6 @@ There are some examples:
 
 - [SageMaker Experiment with Tensorflow](https://github.com/cdk-entest/sagemaker-studio/blob/master/notebook/sg-experiment-tensorflow.ipynb)
 - [SageMaker Experiment with PyTorch](https://github.com/cdk-entest/sagemaker-studio/blob/master/notebook/sg-experiment-pytouch.ipynb)
-
-## SageMaker Hyper Parameters
 
 ## Reference
 

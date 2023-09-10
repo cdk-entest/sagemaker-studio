@@ -5,6 +5,7 @@ pip install jupyterlab-lsp \
     'python-lsp-server[all]' \
     jupyterlab-spellchecker
 
+pip install jupyterlab-code-formatter black
 
 # Install sagemaker SDK  & scikit-learn onto jlab server for jump to definition support for sagemaker SDK
 pip install sagemaker scikit-learn
