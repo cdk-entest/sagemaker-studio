@@ -191,6 +191,14 @@ Then install wanted packages, or entire script
 pip install jupyterlab-code-formatter black
 ```
 
+Install language servers
+
+```bash
+pip install jupyterlab-lsp \
+    'python-lsp-server[all]' \
+    jupyterlab-spellchecker
+```
+
 Then restart the jupyter server, wait for the terminal closed and refresh the browser notebook
 
 ```bash
@@ -272,8 +280,10 @@ Second, from SageMaker studio launcher, we see the code server enabled as below 
 Third, start using the code server either via web or from local vscode via remote access. Select python intepreter and install dependencies
 
 ```bash
-
+/opt/.cs/conda/envs/codeserver_py39/bin/python -m pip install -r requirements.txt
 ```
+
+![sagemaker-code-server](/assets/sagemaker-code-server.png)
 
 ## SageMaker Feature Store
 
