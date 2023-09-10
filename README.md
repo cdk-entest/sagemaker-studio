@@ -292,6 +292,27 @@ Third, start using the code server either via web or from local vscode via remot
 
 ![sagemaker-code-server](/assets/sagemaker-code-server.png)
 
+## Interactive Plot
+
+To enable interactive plot in SageMaker Jupyter Lab, we need to use [ipympl](https://github.com/matplotlib/ipympl). First to the system studio terminal and install
+
+```bash
+conda install -c conda-forge nodejs
+jupyter labextension install @jupyter-widgets/jupyterlab-manager jupyter-matplotlib
+```
+
+Then install ipympl from notebook
+
+```bash
+pip install ipympl
+```
+
+Then we can plot with interactive mode by using the magic cell
+
+```bash
+%matplotlib widget
+```
+
 ## SageMaker Feature Store
 
 Undersand basic concepts
